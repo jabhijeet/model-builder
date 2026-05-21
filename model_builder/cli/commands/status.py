@@ -39,7 +39,7 @@ async def _status_async() -> None:
 
     latest_run = await store.get_latest_run()
     if latest_run is None:
-        console.print("[dim]No runs yet. Run [bold]model-builder run[/bold] to start.[/dim]")
+        console.print("[dim]No runs yet. Run [bold]aimodelground run[/bold] to start.[/dim]")
         return
 
     dag = DAG.from_file(project_dir / "pipeline.yaml")
@@ -60,7 +60,7 @@ async def _status_async() -> None:
         icon, color = _STATE_ICON.get(state, ("?", "white"))
         hint = ""
         if state == NodeState.AWAITING_HUMAN:
-            hint = f"  [dim]→ model-builder approve {node_id}[/dim]"
+            hint = f"  [dim]→ aimodelground approve {node_id}[/dim]"
         elif state == NodeState.FAILED and nr and nr.error:
             hint = f"  [dim red]{nr.error[:60]}[/dim red]"
         table.add_row(
@@ -70,3 +70,4 @@ async def _status_async() -> None:
         )
     console.print(table)
     console.print()
+

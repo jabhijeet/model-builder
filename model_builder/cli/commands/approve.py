@@ -38,7 +38,7 @@ async def _approve_async(node_id: str) -> None:
     try:
         await mgr.approve(run.id, node_id, node_def)
         console.print(f"[green]Approved:[/green] {node_id}")
-        console.print("  Resume: [bold]model-builder run[/bold]")
+        console.print("  Resume: [bold]aimodelground run[/bold]")
     except ValueError as e:
         console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(code=1)
@@ -86,4 +86,5 @@ async def _retry_async(node_id: str) -> None:
     nr.finished_at = None
     await store.upsert_node_run(nr)
     console.print(f"[cyan]Reset to pending:[/cyan] {node_id}")
-    console.print("  Resume: [bold]model-builder run[/bold]")
+    console.print("  Resume: [bold]aimodelground run[/bold]")
+

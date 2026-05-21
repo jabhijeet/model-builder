@@ -1,5 +1,7 @@
-"""model-builder — privacy-first local ML model builder."""
+"""aimodelground — privacy-first local AI model builder."""
 
 __version__ = "0.1.0"
-__author__ = "model-builder contributors"
-__license__ = "MIT"
+__author__ = "aimodelground contributors"
+__license__ = "Apache-2.0"
+
+

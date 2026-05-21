@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to model-builder are documented here.
+All notable changes to aimodelground are documented here.
 
 ## [0.1.0] — 2026-05-21
 
@@ -48,19 +48,22 @@ All notable changes to model-builder are documented here.
 
 **ML plugin packages**
 
-`model-builder-classical`:
+`aimodelground-classical`:
 - RandomForest (sklearn) — tabular, SHAP importance, ONNX export
 - XGBoost — tabular, SHAP importance
 - LightGBM — tabular, SHAP importance
 
-`model-builder-dl`:
+`aimodelground-dl`:
 - CNNImagePlugin — 3-layer CNN, torchvision ImageFolder
 - LSTMTabularPlugin — 2-layer LSTM, gradient-based importance
 
-`model-builder-llm`:
+`aimodelground-llm`:
 - LoRATextPlugin — LoRA adapter training on any HF causal/encoder model
 
 **Run versioning**
 - Every pipeline execution creates a numbered run
 - `run --from <node>` replays from node, reusing upstream outputs
 - `compare run_001 run_002` diffs eval metrics
+
+
+

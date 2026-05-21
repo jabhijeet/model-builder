@@ -1,10 +1,10 @@
-# Contributing to model-builder
+# Contributing to aimodelground
 
 ## Development setup
 
 ```powershell
 # Clone and install
-git clone https://github.com/your-org/model-builder
+git clone https://github.com/your-org/aimodelground
 cd model-builder
 
 # Install core in editable mode with dev deps
@@ -16,7 +16,7 @@ uv pip install -e packages/model_builder_dl --project "D:\Projects\model-builder
 uv pip install -e packages/model_builder_llm --project "D:\Projects\model-builder"
 
 # Verify
-uv run --project "D:\Projects\model-builder" model-builder --version
+uv run --project "D:\Projects\model-builder" aimodelground --version
 ```
 
 > **Note (Windows):** `uv sync` removes plugin packages. Re-run the `uv pip install -e` commands after any `uv sync`.
@@ -154,3 +154,6 @@ class MyPlugin:
 - [ ] No Unicode symbols in log file writes (Windows cp1252 compatibility)
 - [ ] `uv sync` still works (no breaking dependency changes)
 - [ ] CHANGELOG.md updated under `[Unreleased]`
+
+
+

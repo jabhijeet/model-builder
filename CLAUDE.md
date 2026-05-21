@@ -1,4 +1,4 @@
-# model-builder — Project Memory
+# aimodelground — Project Memory
 
 ## What this is
 
@@ -31,9 +31,9 @@ model_builder/           Core package (connectors, DAG, scheduler, CLI, web UI)
   web/                   FastAPI app + Jinja2 templates
 
 packages/
-  model_builder_classical/   RandomForest, XGBoost, LightGBM (pip install model-builder-classical)
-  model_builder_dl/          CNN, LSTM (pip install model-builder-dl)
-  model_builder_llm/         LoRA text fine-tuning (pip install model-builder-llm)
+  model_builder_classical/   RandomForest, XGBoost, LightGBM (pip install aimodelground-classical)
+  model_builder_dl/          CNN, LSTM (pip install aimodelground-dl)
+  model_builder_llm/         LoRA text fine-tuning (pip install aimodelground-llm)
 ```
 
 ## Test commands
@@ -87,3 +87,6 @@ PARALLEL_JOIN → immediately SUCCEEDED
 ## CLI commands (current)
 
 init, run, status, approve, skip, retry, logs, runs, compare, tune, export, deploy, ui
+
+
+

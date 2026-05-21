@@ -1,4 +1,4 @@
-"""FastAPI web UI for model-builder. Launched via `model-builder ui`."""
+"""FastAPI web UI for aimodelground. Launched via `aimodelground UI`."""
 import asyncio
 import json
 from pathlib import Path
@@ -31,7 +31,7 @@ def create_app(project_dir: Path) -> FastAPI:
     global _project_dir
     _project_dir = project_dir
 
-    app = FastAPI(title="model-builder UI")
+    app = FastAPI(title="aimodelground UI")
     tmpl = Jinja2Templates(directory=str(_TEMPLATES_DIR))
 
     if _STATIC_DIR.exists():
@@ -253,3 +253,4 @@ def create_app(project_dir: Path) -> FastAPI:
         })
 
     return app
+

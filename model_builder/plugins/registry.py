@@ -73,12 +73,13 @@ class PluginRegistry:
     def get_ml_plugin(self, name: str) -> object:
         if name not in self._ml_plugins:
             raise KeyError(
-                f"ML plugin '{name}' not installed. Run: uv pip install model-builder-classical"
+                f"ML plugin '{name}' not installed. Run: uv pip install aimodelground-classical"
             )
         return self._ml_plugins[name]
 
     def all_ml_plugins(self) -> list:
         return list(self._ml_plugins.values())
+
 
 
 

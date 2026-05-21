@@ -1,8 +1,8 @@
-# model-builder
+# aimodelground
 
-[![PyPI version](https://img.shields.io/pypi/v/model-builder.svg)](https://pypi.org/project/model-builder/)
+[![PyPI version](https://img.shields.io/pypi/v/aimodelground.svg)](https://pypi.org/project/aimodelground/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache-yellow.svg)](LICENSE)
 
 **Privacy-first, locally-installed ML model builder.**
 
@@ -13,15 +13,15 @@ Upload data from any source, let the app guide you step-by-step through training
 ## Installation
 
 ```bash
-pip install model-builder
+pip install aimodelground
 ```
 
 Install ML plugins (choose what you need):
 
 ```bash
-pip install model-builder-classical   # RandomForest, XGBoost, LightGBM
-pip install model-builder-dl          # CNN (images), LSTM (sequences)
-pip install model-builder-llm         # LoRA fine-tuning for text
+pip install aimodelground-classical   # RandomForest, XGBoost, LightGBM
+pip install aimodelground-dl          # CNN (images), LSTM (sequences)
+pip install aimodelground-llm         # LoRA fine-tuning for text
 ```
 
 **Requires Python 3.11+**
@@ -31,21 +31,21 @@ pip install model-builder-llm         # LoRA fine-tuning for text
 ## Quick start
 
 ```bash
-model-builder init my-model      # create project
+aimodelground init my-model      # create project
 cp data.csv my-model/data/raw/  # add your data
 cd my-model
-model-builder run               # start pipeline
-model-builder approve review_data  # approve a gate
-model-builder run               # continue
-model-builder ui                # open web interface
-model-builder deploy            # view deployment guide
+aimodelground run               # start pipeline
+aimodelground approve review_data  # approve a gate
+aimodelground run               # continue
+aimodelground ui                # open web interface
+aimodelground deploy            # view deployment guide
 ```
 
 ---
 
 ## How it works
 
-model-builder runs your data through a configurable **DAG pipeline** with human-in-the-loop gates:
+aimodelground runs your data through a configurable **DAG pipeline** with human-in-the-loop gates:
 
 ```
 ingest → merge → validate → profile → rank_algos
@@ -64,26 +64,26 @@ Each `[GATE]` pauses and waits for your review. Every run is versioned — repla
 
 | Command | Description |
 |---------|-------------|
-| `model-builder --version` | Show version |
-| `model-builder init <name>` | Create project |
-| `model-builder run` | Start/resume pipeline |
-| `model-builder run --from <node>` | Replay from node, reuse upstream |
-| `model-builder status` | Show DAG node states |
-| `model-builder approve <node>` | Approve a gate |
-| `model-builder skip <node>` | Skip a node |
-| `model-builder retry <node>` | Reset failed node |
-| `model-builder logs <node>` | Show node logs |
-| `model-builder runs` | List all runs |
-| `model-builder compare <a> <b>` | Diff eval metrics |
-| `model-builder tune` | Optuna hyperparameter search |
-| `model-builder export [--format]` | Re-export model (pickle/onnx) |
-| `model-builder deploy` | Print deployment guide |
-| `model-builder ui [--port N]` | Open web interface |
-| `model-builder features list` | List saved feature sets |
-| `model-builder features info <n>` | Feature set details |
-| `model-builder features delete <n>` | Delete feature set |
-| `model-builder models list` | View all trained models |
-| `model-builder models update [id]` | Update model with new data |
+| `aimodelground --version` | Show version |
+| `aimodelground init <name>` | Create project |
+| `aimodelground run` | Start/resume pipeline |
+| `aimodelground run --from <node>` | Replay from node, reuse upstream |
+| `aimodelground status` | Show DAG node states |
+| `aimodelground approve <node>` | Approve a gate |
+| `aimodelground skip <node>` | Skip a node |
+| `aimodelground retry <node>` | Reset failed node |
+| `aimodelground logs <node>` | Show node logs |
+| `aimodelground runs` | List all runs |
+| `aimodelground compare <a> <b>` | Diff eval metrics |
+| `aimodelground tune` | Optuna hyperparameter search |
+| `aimodelground export [--format]` | Re-export model (pickle/onnx) |
+| `aimodelground deploy` | Print deployment guide |
+| `aimodelground ui [--port N]` | Open web interface |
+| `aimodelground features list` | List saved feature sets |
+| `aimodelground features info <n>` | Feature set details |
+| `aimodelground features delete <n>` | Delete feature set |
+| `aimodelground models list` | View all trained models |
+| `aimodelground models update [id]` | Update model with new data |
 
 ---
 
@@ -182,10 +182,10 @@ nodes:
 
 ## ML plugins
 
-### model-builder-classical
+### aimodelground-classical
 
 ```bash
-pip install model-builder-classical
+pip install aimodelground-classical
 ```
 
 | Plugin | Algorithm | Update support |
@@ -196,10 +196,10 @@ pip install model-builder-classical
 
 All produce: accuracy/F1/RMSE, SHAP feature importance, pickle + ONNX export.
 
-### model-builder-dl
+### aimodelground-dl
 
 ```bash
-pip install model-builder-dl
+pip install aimodelground-dl
 ```
 
 | Plugin | Architecture |
@@ -207,10 +207,10 @@ pip install model-builder-dl
 | `ml.dl.cnn_image` | 3-layer CNN for image classification |
 | `ml.dl.lstm_tabular` | 2-layer LSTM for sequential/tabular data |
 
-### model-builder-llm
+### aimodelground-llm
 
 ```bash
-pip install model-builder-llm
+pip install aimodelground-llm
 ```
 
 | Plugin | Method |
@@ -238,10 +238,10 @@ pip install model-builder-llm
 ## Feature store
 
 ```bash
-model-builder features list
-model-builder features info <name>
-model-builder features versions <name>
-model-builder features delete <name>
+aimodelground features list
+aimodelground features info <name>
+aimodelground features versions <name>
+aimodelground features delete <name>
 ```
 
 ```yaml
@@ -266,9 +266,9 @@ model-builder features delete <name>
 ## Model update
 
 ```bash
-model-builder models list
-model-builder models update --data data/raw/new.csv --target label
-model-builder models update run_001/random_forest --n-estimators 100
+aimodelground models list
+aimodelground models update --data data/raw/new.csv --target label
+aimodelground models update run_001/random_forest --n-estimators 100
 ```
 
 ---
@@ -276,9 +276,9 @@ model-builder models update run_001/random_forest --n-estimators 100
 ## Versioned runs
 
 ```bash
-model-builder runs
-model-builder compare run_001 run_002
-model-builder run --from validate    # replay, reuse upstream outputs
+aimodelground runs
+aimodelground compare run_001 run_002
+aimodelground run --from validate    # replay, reuse upstream outputs
 ```
 
 ---
@@ -286,7 +286,7 @@ model-builder run --from validate    # replay, reuse upstream outputs
 ## Web UI
 
 ```bash
-model-builder ui --port 8765
+aimodelground ui --port 8765
 ```
 
 - **Pipeline** — live DAG, approve/skip buttons, SSE real-time updates
@@ -331,4 +331,8 @@ See [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
-MIT — see [LICENSE](LICENSE)
+Apache 2.0 — see [LICENSE](LICENSE)
+
+
+
+

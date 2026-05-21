@@ -22,7 +22,7 @@ def ui_command(
 
     project_dir = _project_dir()
     if not (project_dir / "pipeline.yaml").exists():
-        console.print("[red]Error:[/red] pipeline.yaml not found. Run model-builder init first.")
+        console.print("[red]Error:[/red] pipeline.yaml not found. Run aimodelground init first.")
         raise typer.Exit(code=1)
 
     app = create_app(project_dir)
@@ -35,3 +35,4 @@ def ui_command(
         webbrowser.open(url)
 
     uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")
+

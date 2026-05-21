@@ -11,7 +11,7 @@ def test_get_missing_connector_raises():
 
 def test_get_missing_ml_plugin_raises():
     reg = PluginRegistry()
-    with pytest.raises(KeyError, match="model-builder-classical"):
+    with pytest.raises(KeyError, match="aimodelground-classical"):
         reg.get_ml_plugin("ml.classical.random_forest")
 
 
@@ -50,3 +50,4 @@ def test_register_and_get_ml_plugin():
 def test_all_ml_plugins_empty():
     reg = PluginRegistry()
     assert reg.all_ml_plugins() == []
+

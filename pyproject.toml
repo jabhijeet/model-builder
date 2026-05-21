@@ -1,16 +1,16 @@
 [project]
-name = "model-builder"
+name = "aimodelground"
 dynamic = ["version"]
-description = "Privacy-first local ML model builder — async DAG workflow, pluggable connectors, guided training pipeline"
+description = "Privacy-first local AI model builder — async DAG workflow, pluggable connectors, guided training pipeline"
 readme = "README.md"
-license = { file = "LICENSE" }
+license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
-keywords = ["machine-learning", "mlops", "automl", "pipeline", "privacy", "local", "workflow"]
+keywords = ["machine-learning", "mlops", "automl", "pipeline", "privacy", "local", "workflow", "ai"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
@@ -41,14 +41,14 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/your-org/model-builder"
-Documentation = "https://github.com/your-org/model-builder#readme"
-Repository = "https://github.com/your-org/model-builder.git"
-"Bug Tracker" = "https://github.com/your-org/model-builder/issues"
-Changelog = "https://github.com/your-org/model-builder/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/your-org/aimodelground"
+Documentation = "https://github.com/your-org/aimodelground#readme"
+Repository = "https://github.com/your-org/aimodelground.git"
+"Bug Tracker" = "https://github.com/your-org/aimodelground/issues"
+Changelog = "https://github.com/your-org/aimodelground/blob/main/CHANGELOG.md"
 
 [project.scripts]
-model-builder = "model_builder.cli.main:app"
+aimodelground = "model_builder.cli.main:app"
 
 [build-system]
 requires = ["hatchling"]
@@ -67,6 +67,7 @@ include = [
     "/README.md",
     "/LICENSE",
     "/CHANGELOG.md",
+    "/NOTICE",
     "/pyproject.toml",
 ]
 
@@ -81,3 +82,4 @@ dev = [
     "build>=1.0",
     "twine>=5.0",
 ]
+

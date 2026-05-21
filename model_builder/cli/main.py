@@ -15,15 +15,15 @@ from .commands.features import app as features_app
 from .commands.models import app as models_app
 
 app = typer.Typer(
-    name="model-builder",
-    help="Privacy-first local ML model builder",
+    name="aimodelground",
+    help="Privacy-first local AI model builder",
     no_args_is_help=True,
 )
 
 
 def _version_callback(value: bool) -> None:
     if value:
-        typer.echo(f"model-builder {__version__}")
+        typer.echo(f"aimodelground {__version__}")
         raise typer.Exit()
 
 

@@ -67,7 +67,7 @@ def models_info(
     )
     if not match:
         console.print(f"[red]Model '{model_id}' not found.[/red]")
-        console.print("Run [bold]model-builder models list[/bold] to see all models.")
+        console.print("Run [bold]aimodelground models list[/bold] to see all models.")
         raise typer.Exit(code=1)
 
     console.print(f"\n[bold]{match.plugin_name}[/bold]  ({match.run_name})")
@@ -197,7 +197,8 @@ async def _update_async(
         receipt = json.loads(out.read_text())
         console.print(f"\n[green]Model updated successfully[/green] → {run_name}")
         console.print(f"  Updated artifact: [dim]{receipt['updated_artifact_path']}[/dim]")
-        console.print(f"  Run: [bold]model-builder status[/bold] to see the update run")
+        console.print(f"  Run: [bold]aimodelground status[/bold] to see the update run")
     except Exception as e:
         console.print(f"[red]Update failed:[/red] {e}")
         raise typer.Exit(code=1)
+

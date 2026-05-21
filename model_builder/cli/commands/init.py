@@ -61,7 +61,7 @@ def _base_dir() -> Path:
 
 
 def init_command(name: str = typer.Argument(..., help="Project name")) -> None:
-    """Create a new model-builder project."""
+    """Create a new aimodelground project."""
     project_dir = _base_dir() / name
     if project_dir.exists():
         console.print(f"[red]Error:[/red] Project '{name}' already exists at {project_dir}")
@@ -76,4 +76,5 @@ def init_command(name: str = typer.Argument(..., help="Project name")) -> None:
 
     console.print(f"[green]OK[/green] Created project [bold]{name}[/bold] at {project_dir}")
     console.print("  Edit [bold]pipeline.yaml[/bold] to configure your pipeline.")
-    console.print("  Then run: [bold]model-builder run[/bold]")
+    console.print("  Then run: [bold]aimodelground run[/bold]")
+

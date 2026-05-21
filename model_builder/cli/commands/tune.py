@@ -76,3 +76,4 @@ async def _tune_async(trials: int, cv: int, target: Optional[str],
     except Exception as e:
         console.print(f"[red]Tuning failed:[/red] {e}")
         raise typer.Exit(code=1)
+

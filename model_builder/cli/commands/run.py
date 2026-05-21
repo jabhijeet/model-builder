@@ -29,7 +29,7 @@ async def _run_async(from_node: Optional[str]) -> None:
     project_dir = _project_dir()
     pipeline_file = project_dir / "pipeline.yaml"
     if not pipeline_file.exists():
-        console.print("[red]Error:[/red] pipeline.yaml not found. Run [bold]model-builder init[/bold] first.")
+        console.print("[red]Error:[/red] pipeline.yaml not found. Run [bold]aimodelground init[/bold] first.")
         raise typer.Exit(code=1)
 
     store = ProjectStore(project_dir)
@@ -63,7 +63,7 @@ async def _run_async(from_node: Optional[str]) -> None:
         elif event_type == "awaiting_human":
             console.print(f"\n[yellow]GATE:[/yellow] {node_id}")
             console.print(f"   {payload.get('message', '')}")
-            console.print(f"   Run: [bold]model-builder approve {node_id}[/bold]\n")
+            console.print(f"   Run: [bold]aimodelground approve {node_id}[/bold]\n")
 
     events.subscribe(on_event)
 
@@ -88,3 +88,4 @@ async def _reuse_upstream_artifacts(
                 output_path=nr.output_path,
             )
             await store.upsert_node_run(reused)
+

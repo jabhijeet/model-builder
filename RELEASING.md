@@ -1,6 +1,6 @@
-# Releasing model-builder
+# Releasing aimodelground
 
-This document covers how to build, verify, and publish model-builder and its plugin packages to PyPI.
+This document covers how to build, verify, and publish aimodelground and its plugin packages to PyPI.
 
 ---
 
@@ -8,10 +8,10 @@ This document covers how to build, verify, and publish model-builder and its plu
 
 | Package | PyPI name | Directory |
 |---------|-----------|-----------|
-| Core | `model-builder` | `.` (root) |
-| Classical ML | `model-builder-classical` | `packages/model_builder_classical/` |
-| Deep learning | `model-builder-dl` | `packages/model_builder_dl/` |
-| LLM fine-tuning | `model-builder-llm` | `packages/model_builder_llm/` |
+| Core | `aimodelground` | `.` (root) |
+| Classical ML | `aimodelground-classical` | `packages/model_builder_classical/` |
+| Deep learning | `aimodelground-dl` | `packages/model_builder_dl/` |
+| LLM fine-tuning | `aimodelground-llm` | `packages/model_builder_llm/` |
 
 ---
 
@@ -23,7 +23,7 @@ This document covers how to build, verify, and publish model-builder and its plu
 - [ ] Plugin package versions bumped in their `pyproject.toml`
 - [ ] `CHANGELOG.md` updated with release notes
 - [ ] `README.md` accurate for current release
-- [ ] `model-builder --version` shows correct version
+- [ ] `aimodelground --version` shows correct version
 - [ ] `uv build` succeeds for all packages
 - [ ] Wheel contents verified (no junk files)
 
@@ -129,10 +129,10 @@ uv run --project "D:\Projects\model-builder" twine upload --repository testpypi 
 Verify installation from Test PyPI:
 
 ```powershell
-# --extra-index-url is required: Test PyPI only hosts model-builder itself.
+# --extra-index-url is required: Test PyPI only hosts aimodelground itself.
 # Dependencies (aiosqlite, duckdb, etc.) must come from main PyPI.
-pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ model-builder
-model-builder --version
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ aimodelground
+aimodelground --version
 ```
 
 **Production PyPI:**
@@ -149,7 +149,7 @@ Upload plugin packages in the same way from their `dist/` directories.
 
 - [ ] Tag the release in git: `git tag v0.1.0 && git push origin v0.1.0`
 - [ ] Create GitHub Release with changelog notes
-- [ ] Verify `pip install model-builder` works on a clean environment
+- [ ] Verify `pip install aimodelground` works on a clean environment
 - [ ] Update `CHANGELOG.md` with `[Unreleased]` section for next release
 
 ---
@@ -160,7 +160,7 @@ If a broken release is published:
 
 ```powershell
 # Yank (not delete) the broken version — users can still pin it but won't get it by default
-# Do this from the PyPI web UI: pypi.org/manage/project/model-builder/releases/
+# Do this from the PyPI web UI: pypi.org/manage/project/aimodelground/releases/
 ```
 
 Never delete a published release. Yank it and publish a patch version instead.
@@ -186,3 +186,6 @@ repository = https://test.pypi.org/legacy/
 username = __token__
 password = pypi-YOUR-TESTPYPI-TOKEN-HERE
 ```
+
+
+

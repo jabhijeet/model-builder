@@ -138,3 +138,4 @@ async def _delete_async(name: str, version: Optional[int]) -> None:
     except KeyError as e:
         console.print(f"[red]{e}[/red]")
         raise typer.Exit(code=1)
+
