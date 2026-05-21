@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row">
+  <div class="col-12 mb-3 d-flex align-items-center justify-content-between">
+    <div>
+      <h5 class="mb-0">Pipeline: <strong>{{ project_name }}</strong></h5>
+      {% if run_name %}
+      <small class="text-muted">{{ run_name }} &mdash; {{ done }}/{{ total }} nodes done</small>
+      {% else %}
+      <small class="text-muted">No runs yet &mdash; run <code>model-builder run</code> to start</small>
+      {% endif %}
+    </div>
+    {% if awaiting_gates %}
+    <div class="text-warning fw-bold">{{ awaiting_gates }} gate(s) awaiting approval</div>
+    {% endif %}
+  </div>
+</div>
+<div id="pipeline-nodes">
+  {% include "pipeline_nodes.html" %}
+</div>
+{% endblock %}

@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+*.whl
+*.egg
+
+# uv
+.python-version
+
+# Project artifacts
+smoke-test/
+core_plugins/
+*.parquet
+*.pkl
+*.onnx
+*.safetensors
+*.gguf
+DEPLOY.md
+tuning_results.json
+ranking.json
+profile.json
+validation_report.json
+export_meta.json
+
+# Test cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Model-builder runtime
+project.db
+runs/
+data/raw/*.csv
+data/raw/*.parquet
+data/raw/*.json
+
+# Visual companion (brainstorming)
+.superpowers/
+
+# HuggingFace cache
+.cache/huggingface/
+/.claude/
+/docs/

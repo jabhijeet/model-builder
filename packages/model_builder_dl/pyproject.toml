@@ -1,0 +1,39 @@
+[project]
+name = "model-builder-dl"
+version = "0.1.0"
+description = "Deep learning plugins for model-builder: CNN (images), LSTM (sequences) via PyTorch"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+keywords = ["deep-learning", "pytorch", "cnn", "lstm", "model-builder"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "model-builder>=0.1.0",
+    "torch>=2.2",
+    "torchvision>=0.17",
+    "pillow>=10",
+    "pandas>=2",
+    "numpy>=1.26",
+    "scikit-learn>=1.4",
+]
+
+[project.urls]
+Homepage = "https://github.com/your-org/model-builder"
+
+[project.entry-points."model_builder.ml_plugins"]
+"dl.cnn_image" = "model_builder_dl.cnn_image:CNNImagePlugin"
+"dl.lstm_tabular" = "model_builder_dl.lstm_tabular:LSTMTabularPlugin"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[dependency-groups]
+dev = ["pytest>=8", "pytest-asyncio>=0.23"]

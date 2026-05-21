@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+{% if not deploy_md %}
+<p class="text-muted">No deployment guide yet. Complete a training run and export step first.</p>
+<p class="text-muted">Then run: <code>model-builder deploy</code></p>
+{% else %}
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between">
+        <span>DEPLOY.md &mdash; {{ run_name }}</span>
+        <small class="text-muted">{{ export_format }} export</small>
+      </div>
+      <div class="card-body">
+        <pre>{{ deploy_md }}</pre>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    {% if export_meta %}
+    <div class="deploy-card">
+      <div class="text-muted mb-2 small">Export Info</div>
+      <div><strong>Algorithm:</strong> {{ export_meta.plugin }}</div>
+      <div><strong>Format:</strong> {{ export_meta.format }}</div>
+      <div class="mt-2"><small class="text-muted">{{ export_meta.path }}</small></div>
+    </div>
+    {% endif %}
+    {% if ranking %}
+    <div class="deploy-card">
+      <div class="text-muted mb-2 small">AutoML Rankings</div>
+      {% for r in ranking %}
+      <div class="d-flex justify-content-between mb-1">
+        <span>{{ r.name }}</span>
+        <span class="text-info">{{ "%.2f" | format(r.score) }}</span>
+      </div>
+      <div class="progress mb-2" style="height:6px;background:#21262d;">
+        <div class="progress-bar bg-info" style="width:{{ (r.score * 100)|int }}%"></div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

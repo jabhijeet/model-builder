@@ -1,0 +1,42 @@
+[project]
+name = "model-builder-classical"
+version = "0.1.0"
+description = "Classical ML plugins for model-builder: RandomForest, XGBoost, LightGBM with SHAP + ONNX"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+keywords = ["machine-learning", "random-forest", "xgboost", "lightgbm", "shap", "model-builder"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "model-builder>=0.1.0",
+    "scikit-learn>=1.4",
+    "xgboost>=2.0",
+    "lightgbm>=4.0",
+    "shap>=0.45",
+    "skl2onnx>=1.16",
+    "onnxruntime>=1.17",
+    "pandas>=2",
+    "numpy>=1.26",
+]
+
+[project.urls]
+Homepage = "https://github.com/your-org/model-builder"
+
+[project.entry-points."model_builder.ml_plugins"]
+"classical.random_forest" = "model_builder_classical.random_forest:RandomForestPlugin"
+"classical.xgboost" = "model_builder_classical.xgboost_plugin:XGBoostPlugin"
+"classical.lightgbm" = "model_builder_classical.lightgbm_plugin:LightGBMPlugin"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[dependency-groups]
+dev = ["pytest>=8", "pytest-asyncio>=0.23"]

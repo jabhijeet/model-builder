@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>model-builder — {{ page_title }}</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+<script src="https://cdn.jsdelivr.net/npm/htmx.org@1.9.12/dist/htmx.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<style>
+  body { background: #0d1117; color: #e6edf3; }
+  .navbar { background: #161b22 !important; border-bottom: 1px solid #30363d; }
+  .navbar-brand { color: #58a6ff !important; font-weight: bold; }
+  .nav-link { color: #8b949e !important; }
+  .nav-link.active { color: #e6edf3 !important; }
+  .card { background: #161b22; border: 1px solid #30363d; }
+  .card-header { background: #21262d; border-bottom: 1px solid #30363d; }
+  .badge-pending { background: #30363d; color: #8b949e; }
+  .badge-running { background: #d29922; color: #fff; }
+  .badge-succeeded { background: #238636; color: #fff; }
+  .badge-failed { background: #da3633; color: #fff; }
+  .badge-awaiting { background: #1f6feb; color: #fff; }
+  .badge-approved { background: #238636; color: #fff; }
+  .badge-skipped { background: #30363d; color: #8b949e; }
+  .node-card { border-left: 4px solid #30363d; margin-bottom: 8px; padding: 8px 12px; background: #21262d; border-radius: 4px; }
+  .node-card.running { border-left-color: #d29922; }
+  .node-card.succeeded { border-left-color: #238636; }
+  .node-card.failed { border-left-color: #da3633; }
+  .node-card.awaiting_human { border-left-color: #1f6feb; }
+  .node-card.approved { border-left-color: #238636; }
+  .metric-delta-pos { color: #3fb950; }
+  .metric-delta-neg { color: #f85149; }
+  .deploy-card { background: #21262d; border-radius: 6px; padding: 16px; margin-bottom: 12px; }
+  pre { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px; color: #e6edf3; font-size: 13px; overflow-x: auto; }
+  #sse-status { font-size: 11px; }
+</style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg">
+  <div class="container-fluid px-4">
+    <span class="navbar-brand">model-builder <small class="text-muted fw-normal" style="font-size:0.7em">v{{ mb_version }}</small></span>
+    <div class="navbar-nav">
+      <a class="nav-link {% if page == 'pipeline' %}active{% endif %}" href="/">Pipeline</a>
+      <a class="nav-link {% if page == 'data' %}active{% endif %}" href="/data">Data</a>
+      <a class="nav-link {% if page == 'results' %}active{% endif %}" href="/results">Results</a>
+      <a class="nav-link {% if page == 'deploy' %}active{% endif %}" href="/deploy">Deploy</a>
+    </div>
+    <span id="sse-status" class="text-muted ms-auto me-3">connecting...</span>
+  </div>
+</nav>
+<div class="container-fluid px-4 py-3">
+{% block content %}{% endblock %}
+</div>
+<script>
+// SSE live updates
+const es = new EventSource('/events');
+es.onopen = () => document.getElementById('sse-status').textContent = 'live';
+es.onerror = () => document.getElementById('sse-status').textContent = 'disconnected';
+es.onmessage = (e) => {
+  const ev = JSON.parse(e.data);
+  if (ev.type === 'state_change' || ev.type === 'awaiting_human') {
+    htmx.ajax('GET', '/pipeline-nodes', {target: '#pipeline-nodes', swap: 'innerHTML'});
+  }
+};
+</script>
+</body>
+</html>

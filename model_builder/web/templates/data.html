@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row">
+  <div class="col-lg-6">
+    <div class="card mb-3">
+      <div class="card-header">Upload Data File</div>
+      <div class="card-body">
+        <form hx-post="/api/upload" hx-encoding="multipart/form-data" hx-target="#upload-result" hx-swap="innerHTML">
+          <div class="mb-2">
+            <input type="file" name="file" class="form-control form-control-sm" accept=".csv,.json,.parquet,.xlsx">
+          </div>
+          <button type="submit" class="btn btn-sm btn-primary">Upload to data/raw/</button>
+        </form>
+        <div id="upload-result" class="mt-2"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">Data Files</div>
+      <div class="card-body">
+        {% if files %}
+        <ul class="list-group list-group-flush">
+          {% for f in files %}
+          <li class="list-group-item bg-transparent text-light border-secondary d-flex justify-content-between">
+            <span>{{ f.name }}</span>
+            <small class="text-muted">{{ f.size_kb }} KB</small>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted mb-0">No files in data/raw/</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">Data Profile</div>
+      <div class="card-body">
+        {% if profile %}
+        <table class="table table-sm table-dark table-bordered">
+          <tr><td class="text-muted">Rows</td><td>{{ profile.row_count }}</td></tr>
+          <tr><td class="text-muted">Columns</td><td>{{ profile.column_count }}</td></tr>
+          <tr><td class="text-muted">Data types</td><td>{{ profile.data_types | join(", ") }}</td></tr>
+        </table>
+        <table class="table table-sm table-dark table-bordered mt-2">
+          <thead><tr><th>Column</th><th>Type</th><th>Nulls</th></tr></thead>
+          <tbody>
+          {% for col, dtype in profile.columns.items() %}
+          <tr>
+            <td>{{ col }}</td>
+            <td><code>{{ dtype }}</code></td>
+            <td>{{ profile.nulls.get(col, 0) }}</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted mb-0">No profile yet &mdash; run the profile step first.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

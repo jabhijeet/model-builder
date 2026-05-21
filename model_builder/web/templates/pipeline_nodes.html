@@ -1,0 +1,40 @@
+{% for node in nodes %}
+<div class="node-card {{ node.state }}">
+  <div class="d-flex align-items-center justify-content-between">
+    <div>
+      <span class="badge badge-{{ node.state }} me-2">{{ node.state }}</span>
+      <strong>{{ node.id }}</strong>
+      {% if node.plugin %}<small class="text-muted ms-2">{{ node.plugin }}</small>{% endif %}
+    </div>
+    <div class="d-flex gap-2">
+      {% if node.state == "awaiting_human" %}
+      <button class="btn btn-sm btn-primary"
+              hx-post="/api/approve/{{ node.id }}"
+              hx-target="#pipeline-nodes"
+              hx-swap="innerHTML">Approve</button>
+      <button class="btn btn-sm btn-outline-secondary"
+              hx-post="/api/skip/{{ node.id }}"
+              hx-target="#pipeline-nodes"
+              hx-swap="innerHTML">Skip</button>
+      {% endif %}
+      {% if node.state == "failed" %}
+      <button class="btn btn-sm btn-warning"
+              hx-post="/api/retry/{{ node.id }}"
+              hx-target="#pipeline-nodes"
+              hx-swap="innerHTML">Retry</button>
+      {% endif %}
+    </div>
+  </div>
+  {% if node.message %}
+  <div class="mt-1 text-info"><small>{{ node.message }}</small></div>
+  {% endif %}
+  {% if node.error %}
+  <div class="mt-1 text-danger"><small>{{ node.error }}</small></div>
+  {% endif %}
+  {% if node.output_path %}
+  <div class="mt-1"><small class="text-muted">Output: {{ node.output_path }}</small></div>
+  {% endif %}
+</div>
+{% else %}
+<p class="text-muted">No nodes found. Check pipeline.yaml.</p>
+{% endfor %}
