@@ -16,6 +16,18 @@ Upload data from any source, let the app guide you step-by-step through training
 pip install aimodelground
 ```
 
+**Upgrading from a previous version:**
+
+```bash
+# Upgrade to latest
+pip install --upgrade aimodelground
+
+# Pin to a specific version
+pip install "aimodelground==0.2.0"
+```
+
+> **Note:** `pip install aimodelground` without flags will print "Requirement already satisfied" if any version is already installed and will NOT upgrade. Use `--upgrade` or pin the version explicitly.
+
 Then install ML plugins based on your data type:
 
 | Plugin | Install when you have | Examples |
@@ -61,7 +73,190 @@ Every step is a **node** in the DAG. Gates pause execution and wait for your app
 
 ---
 
-## Step-by-step usage
+## Using the CLI — step by step
+
+The CLI is the primary interface. Every action is a single command.
+
+### 1. Create a project
+
+```bash
+aimodelground init my-project
+cd my-project
+```
+
+Creates `pipeline.yaml`, `data/raw/`, `.modelbuilder/config.yaml`.
+
+---
+
+### 2. Add your data
+
+```bash
+cp customers.csv data/raw/
+# or: .parquet, .json, .xlsx, .pdf, .docx
+```
+
+---
+
+### 3. Configure the pipeline
+
+Open `pipeline.yaml` and set:
+
+```yaml
+- id: ingest
+  plugin: connectors.file
+  config:
+    paths: ["data/raw/customers.csv"]   # ← your file
+
+- id: train_rf
+  plugin: ml.classical.random_forest
+  config:
+    target_col: churn                   # ← column to predict
+```
+
+---
+
+### 4. Start the pipeline
+
+```bash
+aimodelground run
+```
+
+Runs until the first gate, prints what to do next.
+
+---
+
+### 5. Check progress
+
+```bash
+aimodelground status
+```
+
+```
+  +  ingest          succeeded
+  +  profile         succeeded
+  ?  review_data     AWAITING  → aimodelground approve review_data
+  .  train_rf        pending
+```
+
+---
+
+### 6. Review data, then approve
+
+```bash
+# See what the profile and algorithm ranking found
+cat runs/run_001/artifacts/profile.json
+cat runs/run_001/artifacts/ranking.json
+
+# Happy with data quality? Approve the gate
+aimodelground approve review_data
+
+# Resume
+aimodelground run
+```
+
+If anything is wrong: `aimodelground retry ingest` to re-run from ingestion.
+
+---
+
+### 7. Wait for training, then review results
+
+```bash
+aimodelground status          # watch node states
+aimodelground logs train_rf   # tail training log
+
+# Once eval_join completes, review metrics
+cat runs/run_001/eval_report.json
+
+# Optionally tune hyperparameters before approving
+aimodelground tune --trials 50
+
+# Approve
+aimodelground approve review_results
+aimodelground run
+```
+
+---
+
+### 8. Get deployment guide
+
+```bash
+aimodelground deploy
+```
+
+Prints the full `DEPLOY.md` with Python script, FastAPI endpoint, and Dockerfile.
+
+---
+
+### 9. Iterate
+
+```bash
+aimodelground runs                        # list all runs
+aimodelground compare run_001 run_002     # diff metrics
+aimodelground run --from train_rf         # re-train with new config
+aimodelground models update               # update model with new data
+aimodelground export --format onnx        # re-export in different format
+```
+
+---
+
+## Using the Web UI — step by step
+
+The Web UI gives a visual view of the pipeline with live updates. Run it alongside the CLI — they share the same state.
+
+### 1. Start the UI
+
+```bash
+cd my-project
+aimodelground ui
+# Opens http://localhost:8765
+```
+
+Keep this running in one terminal. Run `aimodelground run` in a second terminal.
+
+---
+
+### 2. Pipeline tab — monitor execution
+
+- Each node shows its current state with a color badge.
+- Nodes update live as they complete (no refresh needed).
+- **If a node shows `failed`** — click the **Retry** button. The node resets and will re-run next time you run `aimodelground run`.
+- **If a gate shows `awaiting`** — a yellow banner appears at the top with instructions. Click **Approve** or **Skip** directly in the UI.
+- After approving a gate in the UI, go back to your terminal and run `aimodelground run` to resume.
+
+---
+
+### 3. Data tab — upload files and check profile
+
+- **Upload** your data file directly from the browser (drag and drop or file picker). Files go to `data/raw/`.
+- After the `profile` node runs, this tab shows your column types, row count, and null counts.
+- Columns with >10% nulls are highlighted in orange as a warning.
+- **Next steps hint** on this page tells you exactly what to configure in `pipeline.yaml`.
+
+---
+
+### 4. Results tab — review model performance
+
+- Shows evaluation metrics (accuracy, F1, RMSE) for the current run.
+- **Feature importance** chart (SHAP values) shows which columns drive predictions.
+- Click a different **run button** at the top to switch between runs.
+- Click **vs run_001** links to compare two runs side by side — green delta = improvement.
+- A **What to do next** panel on the right tells you the exact next action.
+
+---
+
+### 5. Deploy tab — get your model ready for production
+
+- Shows the auto-generated `DEPLOY.md` with ready-to-paste code.
+- **Copy button** copies the entire guide to clipboard.
+- **Copy path** copies the exported model file path.
+- Choose between three deployment options shown in the guide:
+  - Python script (simplest, runs locally)
+  - FastAPI REST endpoint (API server)
+  - Dockerfile (containerised deployment)
+
+---
+
+## Step-by-step usage (combined reference)
 
 ### Step 1 — Create a project
 
@@ -458,6 +653,7 @@ nodes:
 | Plugin | Source |
 |--------|--------|
 | `connectors.file` | CSV, JSON, Parquet, Excel, Arrow (DuckDB, glob patterns) |
+| `connectors.document` | **PDF, DOCX, TXT, MD** — extracts text, page numbers, char count |
 | `connectors.sql` | PostgreSQL, MySQL, SQLite (SQLAlchemy DSN) |
 | `connectors.rest_poll` | HTTP API polling |
 | `connectors.websocket` | WebSocket stream |
@@ -563,6 +759,147 @@ aimodelground models update run_001/random_forest --n-estimators 100
 
 ---
 
+## Working with PDF and document files
+
+If your data is PDFs, Word documents, text files, or markdown, use `connectors.document`. It extracts text from each file (page-by-page for PDFs) and produces a DataFrame with `filename`, `text`, `page`, and `char_count` columns.
+
+### Step 1 — Organise your files
+
+**Option A — flat folder** (all documents, no labels):
+```
+data/raw/
+  contract_001.pdf
+  contract_002.pdf
+  report_march.docx
+  notes.txt
+```
+
+**Option B — labelled subdirectories** (for classification):
+```
+data/raw/
+  approved/
+    doc_001.pdf
+    doc_002.pdf
+  rejected/
+    doc_003.pdf
+    doc_004.pdf
+```
+
+### Step 2 — Configure `pipeline.yaml`
+
+```yaml
+nodes:
+  - id: ingest_docs
+    type: task
+    plugin: connectors.document
+    config:
+      paths: ["data/raw/**/*.pdf", "data/raw/**/*.docx"]
+      label_from_dir: true   # set true if using labelled subdirectories
+
+  - id: merge
+    type: task
+    plugin: core.merge
+    depends_on: [ingest_docs]
+
+  - id: profile
+    type: task
+    plugin: core.profile
+    depends_on: [merge]
+
+  - id: rank_algos
+    type: task
+    plugin: core.automl_ranker
+    depends_on: [profile]
+
+  - id: review_data
+    type: gate
+    depends_on: [rank_algos]
+    message: "Review extracted text before training"
+
+  - id: train_lora
+    type: task
+    plugin: ml.llm.lora_text
+    depends_on: [review_data]
+    config:
+      text_col: text          # column produced by the document connector
+      label_col: label        # column from label_from_dir, or your own label column
+      base_model: gpt2        # or: meta-llama/Llama-2-7b, mistralai/Mistral-7B-v0.1
+      epochs: 3
+      max_length: 512
+
+  - id: review_results
+    type: gate
+    depends_on: [train_lora]
+    message: "Review fine-tuning results"
+
+  - id: export
+    type: task
+    plugin: core.export
+    depends_on: [review_results]
+    config:
+      format: safetensors     # adapter weights, compatible with Ollama / vLLM
+
+  - id: deploy_advisor
+    type: task
+    plugin: core.deploy_advisor
+    depends_on: [export]
+```
+
+### Step 3 — Run
+
+```bash
+pip install aimodelground-llm   # required for LLM fine-tuning
+
+aimodelground run
+```
+
+The connector extracts text from every PDF/DOCX, then the LLM plugin fine-tunes a LoRA adapter on your labelled documents.
+
+### What the extracted data looks like
+
+| filename | source | page | total_pages | text | char_count | label |
+|----------|--------|------|-------------|------|------------|-------|
+| contract_001.pdf | data/raw/approved/... | 1 | 4 | "This agreement..." | 3420 | approved |
+| contract_001.pdf | data/raw/approved/... | 2 | 4 | "Section 2..." | 2870 | approved |
+
+Each PDF produces one row per page. DOCX and TXT produce one row per file.
+
+### Choosing a base model
+
+| Base model | When to use | GPU required |
+|-----------|-------------|-------------|
+| `gpt2` | Small datasets (<1000 docs), fast iteration, CPU-friendly | No (CPU works) |
+| `distilbert-base-uncased` | Classification tasks, small model, good accuracy | No |
+| `meta-llama/Llama-2-7b` | Large datasets, high accuracy, production use | Yes (8GB+ VRAM) |
+| `mistralai/Mistral-7B-v0.1` | Best accuracy, multilingual support | Yes (8GB+ VRAM) |
+
+### Mixing documents with other data
+
+You can combine document text with structured data in the same pipeline:
+
+```yaml
+nodes:
+  - id: ingest_docs
+    type: task
+    plugin: connectors.document
+    config:
+      paths: ["data/raw/contracts/**/*.pdf"]
+      label_from_dir: true
+
+  - id: ingest_metadata
+    type: task
+    plugin: connectors.file
+    config:
+      paths: ["data/raw/contract_metadata.csv"]
+
+  - id: merge
+    type: task
+    plugin: core.merge
+    depends_on: [ingest_docs, ingest_metadata]
+```
+
+---
+
 ## Versioned runs
 
 ```bash
@@ -622,6 +959,7 @@ See [CHANGELOG.md](CHANGELOG.md).
 ## License
 
 Apache 2.0 — see [LICENSE](LICENSE)
+
 
 
 

@@ -1,6 +1,6 @@
 [project]
 name = "aimodelground-classical"
-version = "0.1.0"
+version = "0.2.0"
 description = "Classical ML plugins for model-builder: RandomForest, XGBoost, LightGBM with SHAP + ONNX"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
@@ -12,7 +12,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "aimodelground>=0.1.0",
+    "aimodelground>=0.2.0",
     "scikit-learn>=1.4",
     "xgboost>=2.0",
     "lightgbm>=4.0",
@@ -44,5 +44,6 @@ dev = ["pytest>=8", "pytest-asyncio>=0.23"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["model_builder_classical"]
+
 
 

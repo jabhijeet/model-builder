@@ -1,37 +1,85 @@
 {% extends "base.html" %}
 {% block content %}
+
+{# ── Page header ── #}
+<div class="row mb-3">
+  <div class="col-12">
+    <h5 class="mb-0">Deploy</h5>
+    <small class="text-muted">Your model is ready — use the guide below to run it in production</small>
+  </div>
+</div>
+
 {% if not deploy_md %}
-<p class="text-muted">No deployment guide yet. Complete a training run and export step first.</p>
-<p class="text-muted">Then run: <code>model-builder deploy</code></p>
+{# ── Not ready yet ── #}
+<div class="alert" style="background:#161f2e;border:1px solid #1f6feb;color:#e6edf3;" role="alert">
+  <strong>Deployment guide not generated yet.</strong> Complete the full pipeline first.
+  <ol class="mb-0 mt-1">
+    <li>Go to <a href="/" class="text-info">Pipeline</a> and check your pipeline status.</li>
+    <li>Training must complete and the <strong>review_results</strong> gate must be approved.</li>
+    <li>Once the <code>export</code> and <code>deploy_advisor</code> nodes succeed, the guide appears here.</li>
+    <li>Or trigger it manually: <code>aimodelground deploy --regenerate</code></li>
+  </ol>
+</div>
+
 {% else %}
+
+{# ── Instructions ── #}
+<div class="alert" style="background:#1a1a2e;border:1px solid #30363d;color:#e6edf3;font-size:13px;" role="alert">
+  <strong>How to use this page</strong> &mdash; your model has been exported and is ready to use.
+  <ul class="mb-0 mt-1">
+    <li><strong>Option 1 (quickest):</strong> Copy the Python script below and run it locally. No server needed.</li>
+    <li><strong>Option 2 (API):</strong> Copy the FastAPI code to serve predictions over HTTP.</li>
+    <li><strong>Option 3 (container):</strong> Use the Dockerfile to package and deploy anywhere (cloud, on-prem, edge).</li>
+    <li>The model file path is shown in the Export Info panel. Copy it to your deployment machine.</li>
+    <li>To re-export in a different format: <code>aimodelground export --format onnx</code></li>
+    <li>To regenerate this guide: <code>aimodelground deploy --regenerate</code></li>
+  </ul>
+</div>
+
 <div class="row">
   <div class="col-lg-8">
     <div class="card">
-      <div class="card-header d-flex justify-content-between">
+      <div class="card-header d-flex justify-content-between align-items-center">
         <span>DEPLOY.md &mdash; {{ run_name }}</span>
-        <small class="text-muted">{{ export_format }} export</small>
+        <div class="d-flex align-items-center gap-2">
+          {% if export_format %}<span class="badge bg-secondary">{{ export_format }}</span>{% endif %}
+          <button class="btn btn-sm btn-outline-secondary"
+                  onclick="navigator.clipboard.writeText(document.getElementById('deploy-content').innerText); this.textContent='Copied!'">
+            Copy
+          </button>
+        </div>
       </div>
-      <div class="card-body">
-        <pre>{{ deploy_md }}</pre>
+      <div class="card-body p-0">
+        <pre id="deploy-content" style="margin:0;padding:16px;max-height:70vh;overflow-y:auto;">{{ deploy_md }}</pre>
       </div>
     </div>
   </div>
+
   <div class="col-lg-4">
+
+    {# ── Export info ── #}
     {% if export_meta %}
-    <div class="deploy-card">
-      <div class="text-muted mb-2 small">Export Info</div>
-      <div><strong>Algorithm:</strong> {{ export_meta.plugin }}</div>
-      <div><strong>Format:</strong> {{ export_meta.format }}</div>
-      <div class="mt-2"><small class="text-muted">{{ export_meta.path }}</small></div>
+    <div class="deploy-card mb-3">
+      <div class="text-muted mb-2 small text-uppercase" style="font-size:11px;letter-spacing:0.05em;">Export Info</div>
+      <div class="mb-1"><strong>Algorithm:</strong> {{ export_meta.plugin }}</div>
+      <div class="mb-1"><strong>Format:</strong> <span class="badge bg-secondary">{{ export_meta.format }}</span></div>
+      <div class="mt-2" style="word-break:break-all;"><small class="text-muted">{{ export_meta.path }}</small></div>
+      <button class="btn btn-sm btn-outline-secondary mt-2"
+              onclick="navigator.clipboard.writeText('{{ export_meta.path }}'); this.textContent='Copied!'">
+        Copy path
+      </button>
     </div>
     {% endif %}
+
+    {# ── AutoML rankings ── #}
     {% if ranking %}
-    <div class="deploy-card">
-      <div class="text-muted mb-2 small">AutoML Rankings</div>
+    <div class="deploy-card mb-3">
+      <div class="text-muted mb-2 small text-uppercase" style="font-size:11px;letter-spacing:0.05em;">Algorithm Rankings</div>
+      <p class="text-muted mb-2" style="font-size:11px;">Score = suitability for your data (0–1)</p>
       {% for r in ranking %}
       <div class="d-flex justify-content-between mb-1">
-        <span>{{ r.name }}</span>
-        <span class="text-info">{{ "%.2f" | format(r.score) }}</span>
+        <span style="font-size:13px;">{{ r.name }}</span>
+        <span class="text-info" style="font-size:13px;">{{ "%.2f" | format(r.score) }}</span>
       </div>
       <div class="progress mb-2" style="height:6px;background:#21262d;">
         <div class="progress-bar bg-info" style="width:{{ (r.score * 100)|int }}%"></div>
@@ -39,6 +87,21 @@
       {% endfor %}
     </div>
     {% endif %}
+
+    {# ── Quick actions ── #}
+    <div class="deploy-card">
+      <div class="text-muted mb-2 small text-uppercase" style="font-size:11px;letter-spacing:0.05em;">Quick actions</div>
+      <div class="d-grid gap-2">
+        <a href="/results" class="btn btn-sm btn-outline-info">View eval metrics</a>
+        <a href="/" class="btn btn-sm btn-outline-secondary">Back to pipeline</a>
+      </div>
+      <hr style="border-color:#30363d;">
+      <p class="text-muted mb-1" style="font-size:12px;"><strong>Re-export in another format:</strong></p>
+      <code style="font-size:11px;">aimodelground export --format onnx</code>
+      <p class="text-muted mt-2 mb-1" style="font-size:12px;"><strong>Update model with new data:</strong></p>
+      <code style="font-size:11px;">aimodelground models update</code>
+    </div>
+
   </div>
 </div>
 {% endif %}

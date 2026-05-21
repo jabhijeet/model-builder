@@ -1,21 +1,88 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="row">
-  <div class="col-12 mb-3 d-flex align-items-center justify-content-between">
+
+{# ── Header ── #}
+<div class="row mb-3">
+  <div class="col-12 d-flex align-items-center justify-content-between">
     <div>
       <h5 class="mb-0">Pipeline: <strong>{{ project_name }}</strong></h5>
       {% if run_name %}
       <small class="text-muted">{{ run_name }} &mdash; {{ done }}/{{ total }} nodes done</small>
       {% else %}
-      <small class="text-muted">No runs yet &mdash; run <code>model-builder run</code> to start</small>
+      <small class="text-muted">No runs started yet</small>
       {% endif %}
     </div>
     {% if awaiting_gates %}
-    <div class="text-warning fw-bold">{{ awaiting_gates }} gate(s) awaiting approval</div>
+    <span class="badge bg-warning text-dark fs-6">{{ awaiting_gates }} gate(s) waiting for your review</span>
     {% endif %}
   </div>
 </div>
+
+{# ── Getting started banner (shown when no run exists) ── #}
+{% if not run_name %}
+<div class="alert" style="background:#1f2d1f;border:1px solid #238636;color:#e6edf3;" role="alert">
+  <strong>Get started</strong> — no pipeline run exists yet.
+  <ol class="mb-0 mt-2">
+    <li>Drop your data file into <code>data/raw/</code> inside the project folder.</li>
+    <li>Open <code>pipeline.yaml</code> and set <code>paths</code> to your file and <code>target_col</code> to the column you want to predict.</li>
+    <li>In a terminal run: <code>aimodelground run</code> — then refresh this page.</li>
+  </ol>
+</div>
+{% endif %}
+
+{# ── Gate action banner (shown when gates are waiting) ── #}
+{% if awaiting_gates %}
+<div class="alert" style="background:#1f2920;border:1px solid #d29922;color:#e6edf3;" role="alert">
+  <strong>Action required</strong> &mdash; {{ awaiting_gates }} gate(s) below are waiting for your review.
+  <ul class="mb-0 mt-1">
+    <li>Read the gate message, check the node output if needed.</li>
+    <li>Click <strong>Approve</strong> to continue the pipeline, or <strong>Skip</strong> to bypass the step.</li>
+    <li>After approving, run <code>aimodelground run</code> in a terminal to resume execution.</li>
+  </ul>
+</div>
+{% endif %}
+
+{# ── Node list ── #}
 <div id="pipeline-nodes">
   {% include "pipeline_nodes.html" %}
 </div>
+
+{# ── Legend ── #}
+<div class="mt-4 pt-3" style="border-top:1px solid #30363d;">
+  <small class="text-muted">
+    <strong>Node status:</strong>&nbsp;
+    <span class="badge badge-pending">pending</span> waiting to run &nbsp;
+    <span class="badge badge-running">running</span> executing now &nbsp;
+    <span class="badge badge-succeeded">succeeded</span> complete &nbsp;
+    <span class="badge badge-awaiting">awaiting</span> needs your approval &nbsp;
+    <span class="badge badge-failed">failed</span> error — click Retry &nbsp;
+    <span class="badge badge-skipped">skipped</span> bypassed
+  </small>
+</div>
+
+{# ── What to do next ── #}
+<div class="card mt-4">
+  <div class="card-header">What to do next</div>
+  <div class="card-body" style="font-size:14px;">
+    {% if not run_name %}
+    <p class="mb-1"><strong>1.</strong> Add your data to <code>data/raw/</code> and edit <code>pipeline.yaml</code>.</p>
+    <p class="mb-1"><strong>2.</strong> Run <code>aimodelground run</code> in a terminal to start the pipeline.</p>
+    <p class="mb-0"><strong>3.</strong> Come back here — nodes will update live as they complete.</p>
+    {% elif awaiting_gates %}
+    <p class="mb-1"><strong>1.</strong> Scroll up to the highlighted gate node(s).</p>
+    <p class="mb-1"><strong>2.</strong> Review the gate message and any relevant output.</p>
+    <p class="mb-1"><strong>3.</strong> Click <strong>Approve</strong> if you're happy, or <strong>Skip</strong> to bypass.</p>
+    <p class="mb-0"><strong>4.</strong> Run <code>aimodelground run</code> in a terminal to resume execution.</p>
+    {% elif done == total and total > 0 %}
+    <p class="mb-1"><strong>Pipeline complete!</strong></p>
+    <p class="mb-1"><strong>1.</strong> Go to the <a href="/results" class="text-info">Results</a> tab to review model performance.</p>
+    <p class="mb-0"><strong>2.</strong> Go to the <a href="/deploy" class="text-info">Deploy</a> tab to get your deployment guide.</p>
+    {% else %}
+    <p class="mb-1"><strong>Pipeline is running.</strong> This page updates live.</p>
+    <p class="mb-1">If a node shows <span class="badge badge-failed">failed</span>, click <strong>Retry</strong> after fixing the issue.</p>
+    <p class="mb-0">Check the <a href="/data" class="text-info">Data</a> tab to inspect your uploaded files and profile.</p>
+    {% endif %}
+  </div>
+</div>
+
 {% endblock %}

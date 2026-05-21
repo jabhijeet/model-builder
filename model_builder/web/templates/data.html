@@ -1,22 +1,51 @@
 {% extends "base.html" %}
 {% block content %}
+
+{# ── Page header ── #}
+<div class="row mb-3">
+  <div class="col-12">
+    <h5 class="mb-0">Data</h5>
+    <small class="text-muted">Upload files and review your data profile before training</small>
+  </div>
+</div>
+
+{# ── Instructions ── #}
+<div class="alert" style="background:#161f2e;border:1px solid #1f6feb;color:#e6edf3;font-size:13px;" role="alert">
+  <strong>How to use this page</strong>
+  <ol class="mb-0 mt-1">
+    <li><strong>Upload your data file</strong> (CSV, JSON, Parquet, Excel, PDF, DOCX) using the form below. Files land in <code>data/raw/</code>.</li>
+    <li>Edit <code>pipeline.yaml</code> to point the <code>connectors.file</code> or <code>connectors.document</code> node at your file.</li>
+    <li>Run <code>aimodelground run</code> in a terminal. After the <code>profile</code> step completes, the <strong>Data Profile</strong> section here will show your column types and null counts.</li>
+    <li>If something looks wrong (wrong types, unexpected nulls), fix the source data and re-run from the <code>ingest</code> node: <code>aimodelground retry ingest</code>.</li>
+  </ol>
+</div>
+
 <div class="row">
   <div class="col-lg-6">
+
+    {# ── Upload ── #}
     <div class="card mb-3">
       <div class="card-header">Upload Data File</div>
       <div class="card-body">
+        <p class="text-muted" style="font-size:12px;">Supported: CSV, JSON, Parquet, Excel, PDF, DOCX, TXT — uploads to <code>data/raw/</code></p>
         <form hx-post="/api/upload" hx-encoding="multipart/form-data" hx-target="#upload-result" hx-swap="innerHTML">
           <div class="mb-2">
-            <input type="file" name="file" class="form-control form-control-sm" accept=".csv,.json,.parquet,.xlsx">
+            <input type="file" name="file" class="form-control form-control-sm"
+                   accept=".csv,.json,.parquet,.xlsx,.xls,.pdf,.docx,.doc,.txt,.md">
           </div>
-          <button type="submit" class="btn btn-sm btn-primary">Upload to data/raw/</button>
+          <button type="submit" class="btn btn-sm btn-primary">Upload</button>
         </form>
         <div id="upload-result" class="mt-2"></div>
       </div>
     </div>
-    <div class="card">
-      <div class="card-header">Data Files</div>
-      <div class="card-body">
+
+    {# ── File list ── #}
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between">
+        <span>Files in data/raw/</span>
+        <small class="text-muted">{{ files | length }} file(s)</small>
+      </div>
+      <div class="card-body p-0">
         {% if files %}
         <ul class="list-group list-group-flush">
           {% for f in files %}
@@ -27,38 +56,86 @@
           {% endfor %}
         </ul>
         {% else %}
-        <p class="text-muted mb-0">No files in data/raw/</p>
+        <div class="p-3 text-muted">
+          No files yet. Upload one above or copy a file to <code>data/raw/</code> manually.
+        </div>
         {% endif %}
       </div>
     </div>
-  </div>
-  <div class="col-lg-6">
+
+    {# ── Next step hint ── #}
     <div class="card">
-      <div class="card-header">Data Profile</div>
+      <div class="card-header">Next steps</div>
+      <div class="card-body" style="font-size:13px;">
+        {% if files %}
+        <p class="mb-1"><strong>1.</strong> Open <code>pipeline.yaml</code> and set your file path under the ingest node.</p>
+        <p class="mb-1"><strong>2.</strong> Set <code>target_col</code> to the column you want to predict.</p>
+        <p class="mb-0"><strong>3.</strong> Run <code>aimodelground run</code> in a terminal to start processing.</p>
+        {% else %}
+        <p class="mb-0">Upload a data file above, then configure <code>pipeline.yaml</code> to point to it.</p>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <div class="col-lg-6">
+
+    {# ── Profile ── #}
+    <div class="card">
+      <div class="card-header">Data Profile
+        {% if profile %}<small class="text-muted ms-2">from latest run</small>{% endif %}
+      </div>
       <div class="card-body">
         {% if profile %}
         <table class="table table-sm table-dark table-bordered">
-          <tr><td class="text-muted">Rows</td><td>{{ profile.row_count }}</td></tr>
-          <tr><td class="text-muted">Columns</td><td>{{ profile.column_count }}</td></tr>
+          <tr><td class="text-muted">Rows</td><td><strong>{{ profile.row_count }}</strong></td></tr>
+          <tr><td class="text-muted">Columns</td><td><strong>{{ profile.column_count }}</strong></td></tr>
           <tr><td class="text-muted">Data types</td><td>{{ profile.data_types | join(", ") }}</td></tr>
         </table>
-        <table class="table table-sm table-dark table-bordered mt-2">
+
+        {# Null warning #}
+        {% set high_null_cols = [] %}
+        {% for col, n in profile.nulls.items() %}
+          {% if profile.row_count > 0 and (n / profile.row_count) > 0.1 %}
+            {% set _ = high_null_cols.append(col) %}
+          {% endif %}
+        {% endfor %}
+        {% if high_null_cols %}
+        <div class="alert alert-warning py-1 px-2 mb-2" style="font-size:12px;">
+          High null rate (&gt;10%) in: <strong>{{ high_null_cols | join(", ") }}</strong>.
+          Consider fixing your source data or increasing <code>max_null_pct</code> in the validator node.
+        </div>
+        {% endif %}
+
+        <table class="table table-sm table-dark table-bordered">
           <thead><tr><th>Column</th><th>Type</th><th>Nulls</th></tr></thead>
           <tbody>
           {% for col, dtype in profile.columns.items() %}
-          <tr>
+          {% set null_count = profile.nulls.get(col, 0) %}
+          <tr {% if profile.row_count > 0 and null_count / profile.row_count > 0.1 %}style="background:#2d1f1f"{% endif %}>
             <td>{{ col }}</td>
             <td><code>{{ dtype }}</code></td>
-            <td>{{ profile.nulls.get(col, 0) }}</td>
+            <td {% if profile.row_count > 0 and null_count / profile.row_count > 0.1 %}class="text-warning"{% endif %}>
+              {{ null_count }}
+            </td>
           </tr>
           {% endfor %}
           </tbody>
         </table>
+
+        <p class="text-muted mb-0" style="font-size:12px;">
+          Profile generated after the <code>profile</code> step completes. Re-run with new data to refresh.
+        </p>
         {% else %}
-        <p class="text-muted mb-0">No profile yet &mdash; run the profile step first.</p>
+        <div class="text-muted" style="font-size:13px;">
+          <p>No profile yet. It appears here after the <code>profile</code> node runs.</p>
+          <p class="mb-0">To generate it: run the pipeline to at least the <code>profile</code> step, then refresh this page.</p>
+        </div>
         {% endif %}
       </div>
     </div>
+
   </div>
 </div>
 {% endblock %}

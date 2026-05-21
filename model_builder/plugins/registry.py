@@ -36,6 +36,8 @@ class PluginRegistry:
         self.register_connector("connectors.gcs", GCSConnector())
         from ..connectors.feature_store import FeatureStoreConnector
         self.register_connector("connectors.feature_store", FeatureStoreConnector())
+        from ..connectors.document import DocumentConnector
+        self.register_connector("connectors.document", DocumentConnector())
         from ..core_plugins.merge_plugin import MergePlugin
         from ..core_plugins.profile_plugin import ProfilePlugin
         from ..core_plugins.validator_plugin import SchemaValidatorPlugin
@@ -79,6 +81,7 @@ class PluginRegistry:
 
     def all_ml_plugins(self) -> list:
         return list(self._ml_plugins.values())
+
 
 
 

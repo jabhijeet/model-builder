@@ -1,6 +1,6 @@
 [project]
 name = "aimodelground-llm"
-version = "0.1.0"
+version = "0.2.0"
 description = "LLM fine-tuning plugin for model-builder: LoRA/QLoRA on Llama, Mistral, GPT-2, Phi via HuggingFace PEFT"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
@@ -12,7 +12,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "aimodelground>=0.1.0",
+    "aimodelground>=0.2.0",
     "transformers>=4.40",
     "peft>=0.10",
     "accelerate>=0.29",
@@ -42,5 +42,6 @@ dev = ["pytest>=8", "pytest-asyncio>=0.23"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["model_builder_llm"]
+
 
 

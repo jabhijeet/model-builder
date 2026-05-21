@@ -93,7 +93,7 @@ Output goes to `dist/` in each package directory.
 # List wheel contents
 uv run --project "D:\Projects\model-builder" python -c "
 import zipfile, sys
-with zipfile.ZipFile('dist/model_builder-0.1.0-py3-none-any.whl') as z:
+with zipfile.ZipFile('dist/model_builder-0.2.0-py3-none-any.whl') as z:
     for name in sorted(z.namelist()):
         print(name)
 "
@@ -131,9 +131,19 @@ Verify installation from Test PyPI:
 ```powershell
 # --extra-index-url is required: Test PyPI only hosts aimodelground itself.
 # Dependencies (aiosqlite, duckdb, etc.) must come from main PyPI.
-pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ aimodelground
+
+# First install (or if upgrading from a previous version — pin the exact version):
+pip install "aimodelground==0.2.0" --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/
+
+# Or use --upgrade to always get the latest published version:
+pip install --upgrade aimodelground --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/
+
 aimodelground --version
+# Expected: aimodelground 0.2.0
 ```
+
+> **Note:** If a previous version is already installed, plain `pip install aimodelground` will print
+> "Requirement already satisfied" and NOT upgrade. Always use `==<version>` or `--upgrade`.
 
 **Production PyPI:**
 
@@ -147,10 +157,37 @@ Upload plugin packages in the same way from their `dist/` directories.
 
 ## Post-release
 
-- [ ] Tag the release in git: `git tag v0.1.0 && git push origin v0.1.0`
-- [ ] Create GitHub Release with changelog notes
-- [ ] Verify `pip install aimodelground` works on a clean environment
-- [ ] Update `CHANGELOG.md` with `[Unreleased]` section for next release
+### 1. Tag the release
+
+```powershell
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+Replace `0.2.0` with the version you just released. Tags must match the version in `model_builder/__init__.py`.
+
+### 2. Create a GitHub Release
+
+1. Go to `github.com/your-org/aimodelground/releases/new`
+2. Select tag `v0.2.0`
+3. Title: `v0.2.0`
+4. Body: paste the `## [0.2.0]` section from `CHANGELOG.md`
+5. Publish release
+
+### 3. Verify clean install
+
+```powershell
+pip install "aimodelground==0.2.0"
+aimodelground --version
+# Expected: aimodelground 0.2.0
+```
+
+### Checklist
+
+- [ ] `git tag v0.2.0` created and pushed
+- [ ] GitHub Release published with changelog notes
+- [ ] `pip install "aimodelground==0.2.0"` works on clean environment
+- [ ] `CHANGELOG.md` updated with `[Unreleased]` section for next release
 
 ---
 
@@ -186,6 +223,7 @@ repository = https://test.pypi.org/legacy/
 username = __token__
 password = pypi-YOUR-TESTPYPI-TOKEN-HERE
 ```
+
 
 
 
