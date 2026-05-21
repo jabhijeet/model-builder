@@ -16,13 +16,29 @@ Upload data from any source, let the app guide you step-by-step through training
 pip install aimodelground
 ```
 
-Install ML plugins (choose what you need):
+Then install ML plugins based on your data type:
+
+| Plugin | Install when you have | Examples |
+|--------|-----------------------|---------|
+| `aimodelground-classical` | **Tabular / structured data** — spreadsheets, SQL exports, CSVs with numeric/categorical columns. Best default choice. Fast, runs on any machine, no GPU needed. | Customer churn, fraud detection, price prediction, sales forecasting |
+| `aimodelground-dl` | **Images or sequences** — folders of photos/scans, or time-series data where row order matters. Needs more RAM. GPU optional but speeds up training significantly. | Image classification, defect detection, sensor anomaly detection, log sequence analysis |
+| `aimodelground-llm` | **Text data** — product reviews, support tickets, emails, documents. Fine-tunes an existing language model (GPT-2, Llama, Mistral) on your labels. GPU strongly recommended (8GB+ VRAM for Llama/Mistral; CPU-only works for GPT-2). | Sentiment analysis, topic classification, intent detection, document routing |
 
 ```bash
-pip install aimodelground-classical   # RandomForest, XGBoost, LightGBM
-pip install aimodelground-dl          # CNN (images), LSTM (sequences)
-pip install aimodelground-llm         # LoRA fine-tuning for text
+# Tabular data (CSV, SQL, Excel) — install this first, covers most use cases
+pip install aimodelground-classical
+
+# Image or sequential data — requires PyTorch (~2GB download)
+pip install aimodelground-dl
+
+# Text classification with LLM fine-tuning — requires PyTorch + HuggingFace (~500MB + model weights)
+pip install aimodelground-llm
+
+# Or install everything at once
+pip install aimodelground-classical aimodelground-dl aimodelground-llm
 ```
+
+> **Not sure?** Start with `aimodelground-classical`. The AutoML ranker will tell you which algorithms suit your data after profiling.
 
 **Requires Python 3.11+**
 
