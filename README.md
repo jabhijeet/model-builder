@@ -44,35 +44,309 @@ pip install aimodelground-classical aimodelground-dl aimodelground-llm
 
 ---
 
-## Quick start
-
-```bash
-aimodelground init my-model      # create project
-cp data.csv my-model/data/raw/  # add your data
-cd my-model
-aimodelground run               # start pipeline
-aimodelground approve review_data  # approve a gate
-aimodelground run               # continue
-aimodelground ui                # open web interface
-aimodelground deploy            # view deployment guide
-```
-
----
-
 ## How it works
 
 aimodelground runs your data through a configurable **DAG pipeline** with human-in-the-loop gates:
 
 ```
 ingest → merge → validate → profile → rank_algos
-            [GATE: review data]
-                        ↓
-         train_rf ──┐
-         train_xgb ─┤→ eval_join → [GATE: review results] → export → DEPLOY.md
-         train_lgb ─┘
+                        [GATE: review data]
+                                ↓
+                 train_rf ──┐
+                 train_xgb ─┤→ eval_join → [GATE: review results] → export → DEPLOY.md
+                 train_lgb ─┘
 ```
 
-Each `[GATE]` pauses and waits for your review. Every run is versioned — replay from any node, compare runs, update models with new data.
+Every step is a **node** in the DAG. Gates pause execution and wait for your approval. You can use the **CLI** (terminal-first) or the **Web UI** (browser-first) — both share the same project state.
+
+---
+
+## Step-by-step usage
+
+### Step 1 — Create a project
+
+```bash
+aimodelground init my-churn-model
+cd my-churn-model
+```
+
+This creates:
+
+```
+my-churn-model/
+  pipeline.yaml      ← DAG definition (edit this)
+  data/raw/          ← drop your data files here
+  .modelbuilder/     ← project config
+```
+
+---
+
+### Step 2 — Add your data
+
+Drop any supported file into `data/raw/`:
+
+```bash
+cp customers.csv my-churn-model/data/raw/
+# or: .parquet, .json, .xlsx, .png folder, .wav folder
+```
+
+For SQL databases, S3, GCS, Kafka, REST APIs — configure the connector in `pipeline.yaml` (see [Data connectors](#data-connectors)).
+
+---
+
+### Step 3 — Configure `pipeline.yaml`
+
+Open `pipeline.yaml`. The default template is pre-filled. You only need to set **two things**:
+
+**a) Point to your data:**
+
+```yaml
+- id: ingest
+  type: task
+  plugin: connectors.file
+  config:
+    paths: ["data/raw/customers.csv"]   # ← your file
+```
+
+**b) Set your target column** (the column you want to predict):
+
+```yaml
+- id: train_rf
+  type: task
+  plugin: ml.classical.random_forest
+  depends_on: [review_data]
+  config:
+    target_col: churn    # ← column name to predict
+```
+
+Everything else (merge, validate, profile, rank, eval, export) runs automatically.
+
+---
+
+### Step 4 — Run the pipeline
+
+**Using the CLI:**
+
+```bash
+aimodelground run
+```
+
+The pipeline starts. It will run until it hits the first review gate, then print:
+
+```
+GATE: review_data
+   Review data profile and algorithm rankings before training
+   Run: aimodelground approve review_data
+```
+
+**Using the Web UI:**
+
+```bash
+aimodelground ui
+# Opens http://localhost:8765 in your browser
+```
+
+The **Pipeline** tab shows each node with a live status indicator. Nodes turn green as they complete.
+
+---
+
+### Step 5 — Check what the pipeline found (first gate)
+
+Before training starts, aimodelground profiles your data and ranks algorithms. Review what it discovered:
+
+**CLI:**
+
+```bash
+aimodelground status
+```
+
+Output:
+
+```
+Pipeline: my-churn-model  run_001  4/8 nodes done
+
+  +  ingest          succeeded
+  +  merge           succeeded
+  +  validate        succeeded
+  +  profile         succeeded
+  +  rank_algos      succeeded
+  ?  review_data     AWAITING  → aimodelground approve review_data
+  .  train_rf        pending
+  .  train_xgb       pending
+```
+
+To see the full data profile and algorithm rankings:
+
+```bash
+# Check the profile saved in the run artifacts
+cat runs/run_001/artifacts/profile.json
+
+# Check which algorithms were ranked and why
+cat runs/run_001/artifacts/ranking.json
+```
+
+**Web UI:** The **Data** tab shows your column types, null counts, and distributions. The Pipeline tab shows the ranking results inline on the `rank_algos` node.
+
+If the data looks wrong (wrong types, too many nulls, wrong file loaded) — fix the issue and retry:
+
+```bash
+aimodelground retry ingest   # re-runs ingest and all downstream nodes
+aimodelground run            # resumes
+```
+
+If everything looks good — approve the gate:
+
+```bash
+aimodelground approve review_data
+```
+
+**Web UI:** Click the **Approve** button on the `review_data` gate node.
+
+Then resume:
+
+```bash
+aimodelground run
+```
+
+---
+
+### Step 6 — Wait for training
+
+Training runs in parallel for all selected algorithms. Watch progress:
+
+**CLI:**
+
+```bash
+aimodelground status          # check node states
+aimodelground logs train_rf   # tail logs for a specific node
+```
+
+**Web UI:** The Pipeline tab updates live. Click any running node to see its log output in the side panel.
+
+Training time depends on your data size and hardware:
+- Tabular data, 10k–100k rows: typically 30 seconds – 5 minutes
+- Images / sequences: minutes to hours depending on GPU
+
+---
+
+### Step 7 — Review results (second gate)
+
+After all models finish, the pipeline pauses again:
+
+**CLI:**
+
+```bash
+aimodelground status
+# shows: review_results  AWAITING
+
+# View the eval report
+cat runs/run_001/eval_report.json
+```
+
+**Web UI:** Go to the **Results** tab. You'll see:
+- Leaderboard table: each algorithm with accuracy, F1, RMSE
+- Feature importance chart (SHAP values)
+- Option to compare against a previous run
+
+If results are poor:
+- Try tuning hyperparameters first: `aimodelground tune --trials 50`
+- Or re-run with different data: `aimodelground run --from ingest`
+- Or skip a poorly-performing algorithm: `aimodelground skip train_xgb`
+
+When satisfied — approve:
+
+```bash
+aimodelground approve review_results
+aimodelground run
+```
+
+**Web UI:** Click **Approve** on the `review_results` gate.
+
+---
+
+### Step 8 — Export and deploy
+
+After approval, the pipeline exports the best model and generates `DEPLOY.md`.
+
+**CLI:**
+
+```bash
+aimodelground deploy
+# Prints the full deployment guide with code examples
+```
+
+**Web UI:** Go to the **Deploy** tab. It shows:
+- Model info (algorithm, format, input schema)
+- Python inference script
+- FastAPI REST endpoint (copy-paste ready)
+- Dockerfile
+
+By default the model exports as `pickle`. To export as ONNX:
+
+```yaml
+# in pipeline.yaml
+- id: export
+  type: task
+  plugin: core.export
+  depends_on: [review_results]
+  config:
+    format: onnx     # or: pickle, safetensors
+```
+
+Or re-export after the fact:
+
+```bash
+aimodelground export --format onnx
+```
+
+The exported file is at `runs/run_001/export/model.onnx` (or `.pkl`).
+
+---
+
+### Step 9 — Iterate
+
+**Compare two runs:**
+
+```bash
+aimodelground compare run_001 run_002
+```
+
+Output:
+
+```
+Comparing run_001 vs run_002
+ Metric    run_001    run_002    Delta
+ accuracy  0.8412     0.8891    +0.0479
+ f1        0.8103     0.8654    +0.0551
+```
+
+**Replay from a specific node** (e.g., re-train with different config without re-ingesting):
+
+```bash
+# Edit pipeline.yaml — change n_estimators, learning_rate, etc.
+aimodelground run --from train_rf
+```
+
+**Update an existing model with new data:**
+
+```bash
+aimodelground models list
+aimodelground models update run_001/random_forest --data data/raw/new_customers.csv
+```
+
+---
+
+### Common issues
+
+| Problem | Fix |
+|---------|-----|
+| Node shows `failed` | `aimodelground logs <node>` to see error. Fix the issue, then `aimodelground retry <node>` |
+| Wrong target column | Edit `pipeline.yaml`, set correct `target_col`, then `aimodelground run --from train_rf` |
+| Too many nulls in data | Fix source data, then `aimodelground retry ingest` |
+| Training too slow | Reduce dataset size for prototyping, or add GPU. For tabular data, `n_estimators: 50` trains faster |
+| Model accuracy too low | Run `aimodelground tune --trials 100` before the training gate, or add more data |
+| Want to skip an algorithm | `aimodelground skip train_xgb` — downstream nodes unblock automatically |
+| Web UI not updating | Check `aimodelground run` is still running in another terminal |
 
 ---
 
