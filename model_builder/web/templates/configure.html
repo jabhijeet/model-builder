@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="page-head">
+  <h1>Configure Pipeline</h1>
+  <p>Select your data file and target column — YAML updates live on the right</p>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    pipeline.yaml
+    <div class="d-flex gap-8">
+      <button class="btn btn-ghost btn-sm" onclick="validateYaml()">Validate</button>
+      <button class="btn btn-primary btn-sm" id="save-yaml-btn" onclick="saveYaml()">Save</button>
+    </div>
+  </div>
+  <div class="split-pane">
+
+    {# ── Left: Smart form ── #}
+    <div class="pane pane-left">
+
+      <label class="label-sm">Data File</label>
+      <select class="field-select" id="cfg-file">
+        {% if files %}
+        {% for fname in files %}
+        <option value="{{ fname }}">{{ fname }}</option>
+        {% endfor %}
+        {% else %}
+        <option value="">— no files in data/raw/ —</option>
+        {% endif %}
+      </select>
+      <span class="small text-muted" id="file-info"></span>
+
+      <label class="label-sm mt-12">Target Column</label>
+      <select class="field-select" id="cfg-target">
+        <option value="">Loading columns...</option>
+      </select>
+
+      <label class="label-sm mt-12">Algorithms</label>
+      <div class="chip-group">
+        {% for algo in available_algos %}
+        <span class="chip selected" data-algo="{{ algo.id }}" onclick="toggleChip(this, 'algo-chip')">
+          {{ algo.label }}
+        </span>
+        {% endfor %}
+        {% if not available_algos %}
+        <span class="text-muted small">Install aimodelground-classical or aimodelground-dl for algorithm options.</span>
+        {% endif %}
+      </div>
+
+      <label class="label-sm mt-12">Task Type</label>
+      <div class="chip-group">
+        <span class="chip task-chip selected" data-value="classification" onclick="toggleTaskChip(this)">Classification</span>
+        <span class="chip task-chip" data-value="regression" onclick="toggleTaskChip(this)">Regression</span>
+      </div>
+
+      <div id="yaml-error" class="alert alert-danger mt-12" hidden></div>
+
+    </div>
+
+    {# ── Right: Live YAML ── #}
+    <div class="pane">
+      <label class="label-sm">Live YAML <span class="text-muted">(edit directly or use form)</span></label>
+      <textarea class="yaml-textarea" id="yaml-editor">{{ yaml_content }}</textarea>
+    </div>
+
+  </div>
+</div>
+
+<div class="d-flex gap-8">
+  <a href="/upload" class="btn btn-ghost">&larr; Back to Upload</a>
+  <a href="/" class="btn btn-primary">Save &amp; Go to Run &rarr;</a>
+</div>
+
+<script src="/static/yaml-editor.js"></script>
+{% endblock %}

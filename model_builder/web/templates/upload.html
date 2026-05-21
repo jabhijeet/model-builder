@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="page-head">
+  <h1>Upload Data</h1>
+  <p>Drop a file to get started — CSV, JSON, Parquet, Excel, PDF, DOCX</p>
+</div>
+
+{% if not files %}
+<div class="alert alert-info">
+  <strong>No files yet.</strong> Upload a file below and it will land in <code>data/raw/</code>.
+  Then move to <a href="/configure">Configure</a> to set your target column and pipeline.
+</div>
+{% endif %}
+
+<div class="grid-2">
+  <div>
+
+    {# ── Upload zone ── #}
+    <div class="card">
+      <div class="card-head">Upload File</div>
+      <div class="card-body">
+        <div class="upload-zone" id="upload-zone"
+             onclick="document.getElementById('file-input').click()"
+             ondragover="event.preventDefault();this.classList.add('drag-over')"
+             ondragleave="this.classList.remove('drag-over')"
+             ondrop="handleDrop(event)">
+          <div style="font-size:32px;margin-bottom:10px;">&#8613;</div>
+          <div class="fw-700 mb-8">Drop file here or click to browse</div>
+          <div class="text-muted small">CSV, JSON, Parquet, Excel, PDF, DOCX, TXT</div>
+        </div>
+        <form id="upload-form" hx-post="/api/upload" hx-encoding="multipart/form-data"
+              hx-target="#upload-result" hx-swap="innerHTML" style="display:none">
+          <input type="file" id="file-input" name="file"
+                 accept=".csv,.json,.parquet,.xlsx,.xls,.pdf,.docx,.doc,.txt,.md"
+                 onchange="submitUpload(this)">
+        </form>
+        <div id="upload-result" class="mt-8"></div>
+      </div>
+    </div>
+
+    {# ── File list ── #}
+    <div class="card">
+      <div class="card-head">
+        Files in data/raw/
+        <span class="small text-muted">{{ files | length }} file(s)</span>
+      </div>
+      <div class="card-body" style="padding:0">
+        {% if files %}
+        {% for f in files %}
+        <div class="file-pill" style="margin:8px 12px;">
+          <div class="file-icon">&#128196;</div>
+          <div>
+            <div class="file-name">{{ f.name }}</div>
+            <div class="file-meta">{{ f.size_kb }} KB</div>
+          </div>
+          <span class="file-badge">ready</span>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="card-body text-muted">No files yet.</div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <div>
+    <div class="card">
+      <div class="card-head">Next Steps</div>
+      <div class="card-body" style="font-size:13px;">
+        {% if files %}
+        <p class="mb-8"><strong>1.</strong> Go to <a href="/configure">Configure</a> — your file is auto-detected there.</p>
+        <p class="mb-8"><strong>2.</strong> Pick your target column and algorithms.</p>
+        <p class="mb-0"><strong>3.</strong> Click Save, then go to <a href="/">Run</a> and start the pipeline.</p>
+        {% else %}
+        <p class="mb-0">Upload a data file to enable the Configure step.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function submitUpload(input) {
+  if (input.files.length) {
+    htmx.trigger(document.getElementById('upload-form'), 'submit');
+    setTimeout(function() { location.reload(); }, 1200);
+  }
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag-over');
+  var dt = e.dataTransfer;
+  if (dt.files.length) {
+    var input = document.getElementById('file-input');
+    input.files = dt.files;
+    submitUpload(input);
+  }
+}
+</script>
+{% endblock %}

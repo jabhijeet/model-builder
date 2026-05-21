@@ -1,6 +1,6 @@
 [project]
 name = "aimodelground-classical"
-version = "0.2.0"
+version = "0.3.0"
 description = "Classical ML plugins for model-builder: RandomForest, XGBoost, LightGBM with SHAP + ONNX"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.11"

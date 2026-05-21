@@ -1,6 +1,6 @@
 [project]
 name = "aimodelground-llm"
-version = "0.2.0"
+version = "0.3.0"
 description = "LLM fine-tuning plugin for model-builder: LoRA/QLoRA on Llama, Mistral, GPT-2, Phi via HuggingFace PEFT"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.11"

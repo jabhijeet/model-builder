@@ -3,6 +3,7 @@
 [![PyPI version](https://img.shields.io/pypi/v/aimodelground.svg)](https://pypi.org/project/aimodelground/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache-yellow.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-231%20passing-brightgreen.svg)](#)
 
 **Privacy-first, locally-installed ML model builder.**
 
@@ -23,7 +24,7 @@ pip install aimodelground
 pip install --upgrade aimodelground
 
 # Pin to a specific version
-pip install "aimodelground==0.2.0"
+pip install "aimodelground==0.3.0"
 ```
 
 > **Note:** `pip install aimodelground` without flags will print "Requirement already satisfied" if any version is already installed and will NOT upgrade. Use `--upgrade` or pin the version explicitly.
@@ -201,9 +202,7 @@ aimodelground export --format onnx        # re-export in different format
 
 ## Using the Web UI — step by step
 
-The Web UI gives a visual view of the pipeline with live updates. Run it alongside the CLI — they share the same state.
-
-### 1. Start the UI
+The Web UI is a guided 6-step wizard. From v0.3.0 you can run the entire pipeline (upload → train → deploy → query) without touching the terminal.
 
 ```bash
 cd my-project
@@ -211,48 +210,194 @@ aimodelground ui
 # Opens http://localhost:8765
 ```
 
-Keep this running in one terminal. Run `aimodelground run` in a second terminal.
+The wizard stepper at the top tracks your progress. Completed steps are clickable (green ✓). Steps unlock as you complete each stage.
+
+```
+ ✓ Upload  →  ✓ Configure  →  ▶ Run  →  · Results  →  · Deploy  →  · Query
+```
 
 ---
 
-### 2. Pipeline tab — monitor execution
+### Step 1 — Upload
 
-- Each node shows its current state with a color badge.
-- Nodes update live as they complete (no refresh needed).
-- **If a node shows `failed`** — click the **Retry** button. The node resets and will re-run next time you run `aimodelground run`.
-- **If a gate shows `awaiting`** — a yellow banner appears at the top with instructions. Click **Approve** or **Skip** directly in the UI.
-- After approving a gate in the UI, go back to your terminal and run `aimodelground run` to resume.
+Drag and drop your data file, or click the upload zone to browse.
 
----
+```
+┌─────────────────────────────────────────────────────────┐
+│  Upload Data                                            │
+│  Drop a file to get started — CSV, JSON, Parquet...    │
+├─────────────────────────────────────────────────────────┤
+│  ┌──────────────────────────────────────────────────┐  │
+│  │                                                  │  │
+│  │              ⇩  Drop file here                   │  │
+│  │         or click to browse                       │  │
+│  │    CSV · JSON · Parquet · Excel · PDF · DOCX     │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                         │
+│  Files in data/raw/  (1 file)                          │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │ 📄 iris.csv               24.1 KB      ready     │  │
+│  └──────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+```
 
-### 3. Data tab — upload files and check profile
-
-- **Upload** your data file directly from the browser (drag and drop or file picker). Files go to `data/raw/`.
-- After the `profile` node runs, this tab shows your column types, row count, and null counts.
-- Columns with >10% nulls are highlighted in orange as a warning.
-- **Next steps hint** on this page tells you exactly what to configure in `pipeline.yaml`.
-
----
-
-### 4. Results tab — review model performance
-
-- Shows evaluation metrics (accuracy, F1, RMSE) for the current run.
-- **Feature importance** chart (SHAP values) shows which columns drive predictions.
-- Click a different **run button** at the top to switch between runs.
-- Click **vs run_001** links to compare two runs side by side — green delta = improvement.
-- A **What to do next** panel on the right tells you the exact next action.
+Files land in `data/raw/`. Move to Configure once your file appears in the list.
 
 ---
 
-### 5. Deploy tab — get your model ready for production
+### Step 2 — Configure
 
-- Shows the auto-generated `DEPLOY.md` with ready-to-paste code.
-- **Copy button** copies the entire guide to clipboard.
-- **Copy path** copies the exported model file path.
-- Choose between three deployment options shown in the guide:
-  - Python script (simplest, runs locally)
-  - FastAPI REST endpoint (API server)
-  - Dockerfile (containerised deployment)
+The left pane auto-detects your file's columns. The right pane shows live YAML that updates as you change the form.
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  pipeline.yaml                              [Validate]  [Save]      │
+├──────────────────────────────┬──────────────────────────────────────┤
+│  DATA FILE                   │  Live YAML                           │
+│  ▾ iris.csv                  │  nodes:                              │
+│    150 rows · 5 cols         │    - id: ingest_files                │
+│                              │      plugin: connectors.file         │
+│  TARGET COLUMN               │      config:                         │
+│  ▾ species (categorical)     │        paths: ["data/raw/iris.csv"]  │
+│                              │        target_col: "species"         │
+│  ALGORITHMS                  │                                      │
+│  [✓ RandomForest] [✓ XGBoost]│    - id: validate                   │
+│  [ LightGBM    ] [ LSTM    ] │      plugin: validators.schema       │
+│                              │      depends_on: [ingest_files]      │
+│  TASK TYPE                   │                                      │
+│  [✓ Classification] [Regress]│    - id: review_data                 │
+│                              │      type: gate                      │
+└──────────────────────────────┴──────────────────────────────────────┘
+```
+
+You can edit the YAML directly too — form and YAML stay in sync. Click **Save** when done.
+
+---
+
+### Step 3 — Run
+
+Click **Run Pipeline** — no terminal needed. The pipeline runs in the background with live node updates.
+
+```
+┌─────────────────────────────┐  ┌─────────────────────────────────┐
+│  Pipeline Control           │  │  Nodes                          │
+│                             │  │                                 │
+│  [▶ Run Pipeline] [From: ▾] │  │  ▓ DONE   ingest_files         │
+│                             │  │           connectors.file       │
+│  Progress                   │  │                                 │
+│  ████████░░░░░░  3/8 nodes  │  │  ▓ DONE   validate             │
+│                             │  │           validators.schema     │
+│  ┌─────────────────────┐   │  │                                 │
+│  │ ⏳ Gate: review_data│   │  │  ⏳ GATE  review_data           │
+│  │ Review data profile  │   │  │           awaiting approval     │
+│  │ before training.    │   │  │                                 │
+│  │ [✓ Approve] [Skip]  │   │  │  ·  PEND  profile              │
+│  └─────────────────────┘   │  │  ·  PEND  rank_algos           │
+│                             │  │  ·  PEND  export_model         │
+└─────────────────────────────┘  └─────────────────────────────────┘
+```
+
+Gate cards appear automatically for nodes that need your review. Click **Approve** to continue — the pipeline resumes without restarting.
+
+---
+
+### Step 4 — Results
+
+Metric summary cards at the top, feature importance bars below. Compare runs side by side.
+
+```
+┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+│   94.20%     │  │    0.9412    │  │    0.9780    │
+│   ACCURACY   │  │   F1 SCORE   │  │     AUC      │
+│  ↑ +2.1%     │  │  ↑ +0.018   │  │  — baseline  │
+└──────────────┘  └──────────────┘  └──────────────┘
+
+Feature Importance (SHAP)
+  petal_length  ████████████████████████████  0.912
+  petal_width   ████████████████████          0.782
+  sepal_length  ████████████                  0.421
+  sepal_width   ██████                        0.213
+```
+
+Switch between runs using the selector at the top. Click **vs run_001** to diff two runs with coloured deltas (green = improvement).
+
+---
+
+### Step 5 — Deploy
+
+Auto-generated deployment guide with copy buttons. Links directly to the Query step.
+
+```
+┌────────────────────────────────────┐  ┌─────────────────────┐
+│  DEPLOY.md — run_003    [Copy]     │  │  Export Info        │
+│                                    │  │  Algorithm: RF      │
+│  ## Option 1 — Python             │  │  Format:  pickle    │
+│                                    │  │  runs/.../model.pkl │
+│  import joblib                     │  │  [Copy path]        │
+│  model = joblib.load("model.pkl")  │  ├─────────────────────┤
+│  pred = model.predict([features])  │  │  Quick Actions      │
+│                                    │  │  [Query Model →]    │
+│  ## Option 2 — FastAPI            │  │  [View Metrics]     │
+│  ...                               │  │  [Back to Pipeline] │
+└────────────────────────────────────┘  └─────────────────────┘
+```
+
+---
+
+### Step 6 — Query
+
+Two tabs: **Predict** (run inference) and **Explain** (SHAP insights). No external API or LLM required — everything runs locally from your exported model.
+
+**Predict tab** — type feature values and get an instant prediction:
+
+```
+┌──────────────────────────────────────────────────┐
+│  🎯 Predict  |  🔍 Explain                       │
+├──────────────────────────────────────────────────┤
+│  Enter feature values                            │
+│                                                  │
+│  sepal_length  [5.1    ]   sepal_width  [3.5   ] │
+│  petal_length  [1.4    ]   petal_width  [0.2   ] │
+│                                                  │
+│  [Predict →]  [Clear]                            │
+│                                                  │
+│  ┌─────────────────────────────────────────────┐ │
+│  │  setosa                  Confidence: 99%    │ │
+│  │  Top driver: petal_length = 1.4             │ │
+│  └─────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────┘
+```
+
+**Explain tab** — reads SHAP values, metrics, and profile from run artifacts:
+
+```
+METRICS
+  accuracy     0.9420
+  f1           0.9412
+
+FEATURE IMPORTANCE (SHAP)
+  petal_length  ████████████████████  0.912
+  petal_width   ████████████████      0.782
+
+INSIGHTS
+  💡 'petal_length' dominates predictions (score 0.91) — model may overfit.
+```
+
+---
+
+### Theme
+
+The UI ships with a **Deep Space dark theme** and supports light mode. Click the ☀ Light button in the top bar to toggle — preference is saved in `localStorage`.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  model-builder  v0.3.0     ● live  my-project  ☀ Light │
+│ ─────────────────────────────────────────────────────── │
+│  ✓ Upload  →  ✓ Configure  →  ▶ Run  →  · Results ...  │
+└─────────────────────────────────────────────────────────┘
+```
+
+Dark (default): `#0a0e1a` background, `#4f8ef7` accent. Light: white background, `#2563eb` accent.
 
 ---
 
@@ -291,7 +436,9 @@ For SQL databases, S3, GCS, Kafka, REST APIs — configure the connector in `pip
 
 ### Step 3 — Configure `pipeline.yaml`
 
-Open `pipeline.yaml`. The default template is pre-filled. You only need to set **two things**:
+**Using the Web UI (recommended):** Go to the **Configure** step. The form auto-detects your file's columns and pre-fills the target column dropdown. Select your target, choose algorithms, and click **Save** — the YAML is written for you.
+
+**Using the CLI:** Open `pipeline.yaml`. The default template is pre-filled. You only need to set **two things**:
 
 **a) Point to your data:**
 
@@ -341,7 +488,7 @@ aimodelground ui
 # Opens http://localhost:8765 in your browser
 ```
 
-The **Pipeline** tab shows each node with a live status indicator. Nodes turn green as they complete.
+Go to the **Run** step (step 3 in the wizard). Click **Run Pipeline** — the pipeline starts immediately, no terminal needed. Nodes update live as they complete.
 
 ---
 
@@ -916,10 +1063,18 @@ aimodelground run --from validate    # replay, reuse upstream outputs
 aimodelground ui --port 8765
 ```
 
-- **Pipeline** — live DAG, approve/skip buttons, SSE real-time updates
-- **Data** — file upload, schema, null stats
-- **Results** — leaderboard, Plotly charts, run comparison
-- **Deploy** — rendered deployment guide
+6-step wizard. No terminal needed for basic use from v0.3.0.
+
+| Step | URL | What it does |
+|------|-----|-------------|
+| **Upload** | `/upload` | Drag-drop data files, see file list |
+| **Configure** | `/configure` | Smart form + live YAML editor, auto-detects columns |
+| **Run** | `/` | Run button, live node list, gate approval, progress bar |
+| **Results** | `/results` | Metric cards, SHAP bars, Plotly chart, run comparison |
+| **Deploy** | `/deploy` | Deployment guide, export info, copy buttons |
+| **Query** | `/query` | Predict tab (model inference) + Explain tab (SHAP + insights) |
+
+Dark theme default, light mode toggle (preference stored in browser). See the [Web UI walkthrough](#using-the-web-ui--step-by-step) above for screenshots.
 
 ---
 

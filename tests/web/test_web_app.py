@@ -90,7 +90,7 @@ async def test_skip_node(app, seeded_project):
 
 async def test_data_page_returns_200(app):
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        r = await client.get("/data")
+        r = await client.get("/data", follow_redirects=True)
     assert r.status_code == 200
 
 
@@ -98,7 +98,7 @@ async def test_data_page_shows_uploaded_files(app, seeded_project):
     df = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
     df.to_csv(seeded_project / "data" / "raw" / "sample.csv", index=False)
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        r = await client.get("/data")
+        r = await client.get("/data", follow_redirects=True)
     assert "sample.csv" in r.text
 
 

@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="page-head">
+  <div class="d-flex justify-between align-center">
+    <div>
+      <h1>Run Pipeline</h1>
+      {% if run_name %}
+      <p>{{ run_name }} &mdash; {{ done }}/{{ total }} nodes complete</p>
+      {% else %}
+      <p>No runs started yet</p>
+      {% endif %}
+    </div>
+    {% if awaiting_gates %}
+    <span class="badge badge-awaiting_human" style="font-size:12px;padding:5px 12px;">
+      {{ awaiting_gates }} gate(s) awaiting approval
+    </span>
+    {% endif %}
+  </div>
+</div>
+
+{% if not run_name %}
+<div class="alert alert-info">
+  <strong>Get started</strong> — no pipeline run exists yet.
+  <ol>
+    <li>Go to <a href="/upload">Upload</a> to add your data file.</li>
+    <li>Go to <a href="/configure">Configure</a> to set your target column and save the pipeline.</li>
+    <li>Click <strong>Run Pipeline</strong> below to start.</li>
+  </ol>
+</div>
+{% endif %}
+
+<div class="grid-2" style="margin-bottom:16px;">
+
+  {# ── Left: Run control ── #}
+  <div>
+    <div class="card">
+      <div class="card-head">Pipeline Control</div>
+      <div class="card-body">
+        <div class="d-flex gap-8 mb-12">
+          <button class="btn btn-primary btn-lg flex-1" id="run-btn" onclick="startRun()">&#9654; Run Pipeline</button>
+          <select class="field-select" id="from-node-select" style="width:auto;margin-bottom:0;">
+            <option value="">From start</option>
+            {% for node in nodes %}
+            <option value="{{ node.id }}">From: {{ node.id }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% if total > 0 %}
+        <div class="label-sm">Progress</div>
+        <div class="progress-wrap mb-8">
+          <div class="progress-fill" style="width:{{ ((done / total) * 100) | int }}%"></div>
+        </div>
+        <div class="small text-muted">{{ done }} / {{ total }} nodes &mdash; {{ ((done / total) * 100) | int }}%</div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# ── Gate action card ── #}
+    {% for node in nodes if node.state == 'awaiting_human' %}
+    <div class="gate-card">
+      <div class="gate-title">&#9200; Gate: {{ node.id }}</div>
+      <div class="gate-msg">{{ node.message or 'Review before continuing.' }}</div>
+      <div class="d-flex gap-8">
+        <button class="btn btn-warn flex-1"
+                hx-post="/api/approve/{{ node.id }}"
+                hx-target="#pipeline-nodes"
+                hx-swap="innerHTML">&#10003; Approve</button>
+        <button class="btn btn-ghost"
+                hx-post="/api/skip/{{ node.id }}"
+                hx-target="#pipeline-nodes"
+                hx-swap="innerHTML">Skip</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {# ── Right: Node list ── #}
+  <div>
+    <div class="label-sm">Nodes</div>
+    <div id="pipeline-nodes">
+      {% include "pipeline_nodes.html" %}
+    </div>
+  </div>
+
+</div>
+
+{# ── Legend ── #}
+<div class="small text-muted" style="border-top:1px solid var(--border);padding-top:12px;">
+  <strong>Status:</strong>&nbsp;
+  <span class="badge badge-pending">pending</span>&nbsp;
+  <span class="badge badge-running">running</span>&nbsp;
+  <span class="badge badge-succeeded">done</span>&nbsp;
+  <span class="badge badge-awaiting_human">gate</span>&nbsp;
+  <span class="badge badge-failed">failed</span>&nbsp;
+  <span class="badge badge-skipped">skipped</span>
+</div>
+
+<script>
+async function startRun() {
+  var fromNode = document.getElementById('from-node-select').value;
+  var btn = document.getElementById('run-btn');
+  btn.textContent = 'Starting...';
+  btn.disabled = true;
+  var url = '/api/run' + (fromNode ? '?from_node=' + encodeURIComponent(fromNode) : '');
+  var resp = await fetch(url, { method: 'POST' });
+  if (resp.ok) {
+    btn.textContent = '&#9654; Running...';
+  } else {
+    btn.textContent = 'Error — check pipeline.yaml';
+    btn.disabled = false;
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="page-head">
+  <h1>Query Model</h1>
+  <p>Run predictions against your trained model or review SHAP-based explanations</p>
+</div>
+
+{% if not has_model %}
+<div class="alert alert-info">
+  <strong>No model exported yet.</strong>
+  <ol>
+    <li>Go to <a href="/">Run</a> and approve <strong>select_algos</strong> gate.</li>
+    <li>Click Run Pipeline — the <code>export_model</code> node will produce your model file.</li>
+    <li>Come back here to query it.</li>
+  </ol>
+</div>
+{% else %}
+
+<div class="card">
+  <div class="query-tabs">
+    <div class="query-tab active" data-tab="predict" onclick="switchQueryTab('predict')">&#127919; Predict</div>
+    <div class="query-tab" data-tab="explain" onclick="switchQueryTab('explain')">&#128269; Explain</div>
+  </div>
+
+  {# ── Predict panel ── #}
+  <div id="panel-predict" class="query-panel" style="padding:16px;">
+    {% if not features %}
+    <div class="alert alert-warn">No feature profile found. Run the pipeline through the <code>profile</code> node first.</div>
+    {% else %}
+    <div class="label-sm mb-8">Enter feature values</div>
+    <div class="grid-2 mb-12">
+      {% for feat in features %}
+      <div>
+        <label class="label-sm">{{ feat.name }}</label>
+        <input class="predict-input" data-feature="{{ feat.name }}"
+               type="{% if feat.is_numeric %}number{% else %}text{% endif %}"
+               step="any" placeholder="{{ feat.name }}">
+      </div>
+      {% endfor %}
+    </div>
+    <div class="d-flex gap-8 mb-12">
+      <button class="btn btn-primary" id="predict-btn" onclick="runPrediction()">Predict &#8594;</button>
+      <button class="btn btn-ghost" onclick="document.querySelectorAll('.predict-input').forEach(function(i){i.value='';});document.getElementById('predict-result').hidden=true;">Clear</button>
+    </div>
+    <div id="predict-result" hidden></div>
+    {% endif %}
+  </div>
+
+  {# ── Explain panel ── #}
+  <div id="panel-explain" class="query-panel" style="padding:16px;" hidden>
+    <div id="explain-content" class="text-muted small">Loading...</div>
+  </div>
+
+</div>
+{% endif %}
+
+<script src="/static/predict.js"></script>
+{% endblock %}

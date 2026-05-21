@@ -1,67 +1,221 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>model-builder — {{ page_title }}</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/htmx.org@1.9.12/dist/htmx.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<script src="/static/theme.js"></script>
 <style>
-  body { background: #0d1117; color: #e6edf3; }
-  .navbar { background: #161b22 !important; border-bottom: 1px solid #30363d; }
-  .navbar-brand { color: #58a6ff !important; font-weight: bold; }
-  .nav-link { color: #8b949e !important; }
-  .nav-link.active { color: #e6edf3 !important; }
-  .card { background: #161b22; border: 1px solid #30363d; }
-  .card-header { background: #21262d; border-bottom: 1px solid #30363d; }
-  .badge-pending { background: #30363d; color: #8b949e; }
-  .badge-running { background: #d29922; color: #fff; }
-  .badge-succeeded { background: #238636; color: #fff; }
-  .badge-failed { background: #da3633; color: #fff; }
-  .badge-awaiting { background: #1f6feb; color: #fff; }
-  .badge-approved { background: #238636; color: #fff; }
-  .badge-skipped { background: #30363d; color: #8b949e; }
-  .node-card { border-left: 4px solid #30363d; margin-bottom: 8px; padding: 8px 12px; background: #21262d; border-radius: 4px; }
-  .node-card.running { border-left-color: #d29922; }
-  .node-card.succeeded { border-left-color: #238636; }
-  .node-card.failed { border-left-color: #da3633; }
-  .node-card.awaiting_human { border-left-color: #1f6feb; }
-  .node-card.approved { border-left-color: #238636; }
-  .metric-delta-pos { color: #3fb950; }
-  .metric-delta-neg { color: #f85149; }
-  .deploy-card { background: #21262d; border-radius: 6px; padding: 16px; margin-bottom: 12px; }
-  pre { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px; color: #e6edf3; font-size: 13px; overflow-x: auto; }
-  #sse-status { font-size: 11px; }
+:root,[data-theme="dark"]{--bg:#0a0e1a;--bg2:#0f1628;--bg3:#1a2035;--border:#1e2a4a;--border2:#263358;--accent:#4f8ef7;--accent2:#00d4a0;--accent3:#f59e0b;--text:#e2e8f0;--muted:#6b7fa8;--muted2:#3a4a6a;--danger:#f87171}
+[data-theme="light"]{--bg:#f8faff;--bg2:#ffffff;--bg3:#f0f4ff;--border:#d0d9f0;--border2:#b8c4e0;--accent:#2563eb;--accent2:#059669;--accent3:#d97706;--text:#0f172a;--muted:#64748b;--muted2:#94a3b8;--danger:#dc2626}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:14px;min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:'Fira Code','Cascadia Code',monospace;background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:12px}
+pre{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:'Fira Code',monospace;font-size:12px;overflow-x:auto;color:var(--text);line-height:1.6;max-height:70vh;overflow-y:auto}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.brand{color:var(--accent);font-weight:800;font-size:16px;letter-spacing:-0.5px;display:flex;align-items:center;gap:8px}
+.brand-version{color:var(--muted);font-size:11px;font-weight:400;background:var(--bg3);padding:2px 6px;border-radius:4px;border:1px solid var(--border)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.live-indicator{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);font-weight:500}
+.live-indicator.connected{color:var(--accent2)}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--muted)}
+.live-indicator.connected .live-dot{background:var(--accent2);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.project-name{color:var(--muted);font-size:12px;font-weight:500}
+.theme-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--muted);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:500;transition:border-color .15s}
+.theme-btn:hover{border-color:var(--accent);color:var(--text)}
+.stepper{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;overflow-x:auto;height:52px;gap:0}
+.step-wrap{display:flex;align-items:center}
+.step{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;cursor:pointer;white-space:nowrap;text-decoration:none !important;transition:background .15s;font-weight:600;font-size:12px}
+.step:hover{background:var(--bg3)}
+.step-num{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.step.step-pending .step-num{background:var(--bg3);color:var(--muted2);border:1.5px solid var(--border2)}
+.step.step-pending .step-label{color:var(--muted2)}
+.step.step-pending{cursor:default}
+.step.step-pending:hover{background:transparent}
+.step.step-active .step-num{background:rgba(79,142,247,.18);color:var(--accent);border:1.5px solid rgba(79,142,247,.45)}
+.step.step-active .step-label{color:var(--accent)}
+.step.step-active{background:rgba(79,142,247,.07)}
+.step.step-done .step-num{background:rgba(0,212,160,.15);color:var(--accent2);border:1.5px solid rgba(0,212,160,.35)}
+.step.step-done .step-label{color:var(--accent2)}
+.step-connector{width:20px;height:1px;background:var(--border2);flex-shrink:0;margin:0 2px}
+.page-wrap{max-width:1200px;margin:0 auto;padding:24px}
+.page-head{margin-bottom:20px}
+.page-head h1{font-size:20px;font-weight:700;letter-spacing:-.3px}
+.page-head p{color:var(--muted);font-size:13px;margin-top:3px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.card-head{background:var(--bg3);border-bottom:1px solid var(--border);padding:10px 16px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:flex;justify-content:space-between;align-items:center}
+.card-body{padding:16px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-size:13px;font-weight:600;border:none;cursor:pointer;font-family:inherit;transition:opacity .15s;text-decoration:none}
+.btn:hover{opacity:.85}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-success{background:var(--accent2);color:#0a0e1a}
+.btn-warn{background:var(--accent3);color:#0a0e1a}
+.btn-ghost{background:var(--bg3);color:var(--text);border:1px solid var(--border2)}
+.btn-danger{background:rgba(248,113,113,.15);color:var(--danger);border:1px solid rgba(248,113,113,.25)}
+.btn-lg{padding:11px 24px;font-size:15px;border-radius:9px}
+.btn-sm{padding:4px 10px;font-size:11px;border-radius:5px}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.badge-pending{background:var(--bg3);color:var(--muted)}
+.badge-running{background:rgba(79,142,247,.15);color:var(--accent)}
+.badge-succeeded{background:rgba(0,212,160,.15);color:var(--accent2)}
+.badge-failed{background:rgba(248,113,113,.15);color:var(--danger)}
+.badge-awaiting_human{background:rgba(245,158,11,.15);color:var(--accent3)}
+.badge-approved{background:rgba(0,212,160,.15);color:var(--accent2)}
+.badge-skipped{background:var(--bg3);color:var(--muted)}
+.node-card{background:var(--bg3);border:1px solid var(--border);border-left:3px solid var(--border2);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.node-card.running{border-left-color:var(--accent)}
+.node-card.succeeded{border-left-color:var(--accent2)}
+.node-card.failed{border-left-color:var(--danger)}
+.node-card.awaiting_human{border-left-color:var(--accent3)}
+.node-card.approved{border-left-color:var(--accent2)}
+.node-card.skipped{border-left-color:var(--muted2)}
+.node-id{font-weight:600;font-size:13px}
+.node-plugin{color:var(--muted);font-size:11px;margin-top:1px}
+.node-actions{margin-left:auto;display:flex;gap:6px}
+.progress-wrap{background:var(--bg3);border-radius:4px;height:6px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:4px;transition:width .4s}
+.metric-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.metric-val{font-size:28px;font-weight:800;color:var(--accent2);letter-spacing:-1px}
+.metric-label{color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-top:2px}
+.metric-delta{font-size:11px;margin-top:4px}
+.metric-delta.pos{color:var(--accent2)}
+.metric-delta.neg{color:var(--danger)}
+.feat-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.feat-name{font-size:12px;color:var(--muted);width:130px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.feat-bar-wrap{flex:1;background:var(--bg3);border-radius:3px;height:8px}
+.feat-bar{height:8px;background:var(--accent);border-radius:3px}
+.feat-score{font-size:11px;color:var(--muted);width:38px;text-align:right;flex-shrink:0}
+.alert{border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;border:1px solid}
+.alert-info{background:rgba(79,142,247,.07);border-color:rgba(79,142,247,.25);color:var(--text)}
+.alert-warn{background:rgba(245,158,11,.07);border-color:rgba(245,158,11,.3);color:var(--text)}
+.alert-success{background:rgba(0,212,160,.07);border-color:rgba(0,212,160,.25);color:var(--text)}
+.alert-danger{background:rgba(248,113,113,.07);border-color:rgba(248,113,113,.3);color:var(--text)}
+.alert ol,.alert ul{margin:6px 0 0 16px}
+.alert li{margin-bottom:2px}
+.gate-card{background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.35);border-radius:10px;padding:16px;margin-bottom:16px}
+.gate-title{color:var(--accent3);font-weight:700;font-size:13px;margin-bottom:8px}
+.gate-msg{font-size:13px;margin-bottom:12px}
+.upload-zone{border:2px dashed var(--border2);border-radius:10px;padding:36px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--accent);background:rgba(79,142,247,.04)}
+.file-pill{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.file-icon{width:28px;height:28px;background:rgba(79,142,247,.15);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.file-name{font-size:13px;font-weight:500}
+.file-meta{color:var(--muted);font-size:11px}
+.file-badge{color:var(--accent2);font-size:11px;background:rgba(0,212,160,.1);padding:2px 7px;border-radius:10px;border:1px solid rgba(0,212,160,.25);margin-left:auto;flex-shrink:0}
+.split-pane{display:grid;grid-template-columns:1fr 1fr;min-height:340px}
+.pane{padding:16px}
+.pane-left{border-right:1px solid var(--border)}
+.field-select{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;color:var(--text);font-size:13px;width:100%;font-family:inherit;margin-bottom:12px}
+.field-select:focus{outline:none;border-color:var(--accent)}
+.chip-group{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chip{padding:4px 10px;border-radius:10px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid;transition:background .1s}
+.chip.selected{background:rgba(79,142,247,.18);color:var(--accent);border-color:rgba(79,142,247,.4)}
+.chip:not(.selected){background:var(--bg3);color:var(--muted2);border-color:var(--border)}
+.yaml-textarea{font-family:'Fira Code','Cascadia Code',monospace;font-size:11px;line-height:1.7;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:12px;resize:none;width:100%;min-height:280px}
+.yaml-textarea:focus{outline:none;border-color:var(--accent)}
+.query-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:0}
+.query-tab{padding:11px 18px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s}
+.query-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.predict-input{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text);width:100%;font-family:inherit}
+.predict-input:focus{outline:none;border-color:var(--accent)}
+.predict-result-inner{background:rgba(0,212,160,.07);border:1px solid rgba(0,212,160,.25);border-radius:8px;padding:14px;display:flex;align-items:center;gap:16px}
+.predict-class{font-size:22px;font-weight:800;color:var(--accent2)}
+.predict-conf{color:var(--muted);font-size:12px;margin-top:2px}
+.text-muted{color:var(--muted)}
+.text-accent{color:var(--accent)}
+.text-success{color:var(--accent2)}
+.text-danger{color:var(--danger)}
+.text-warn{color:var(--accent3)}
+.fw-600{font-weight:600}
+.fw-700{font-weight:700}
+.fw-800{font-weight:800}
+.d-flex{display:flex}
+.align-center{align-items:center}
+.justify-between{justify-content:space-between}
+.flex-1{flex:1}
+.gap-8{gap:8px}
+.gap-12{gap:12px}
+.mb-0{margin-bottom:0}
+.mb-8{margin-bottom:8px}
+.mb-12{margin-bottom:12px}
+.mb-16{margin-bottom:16px}
+.mt-8{margin-top:8px}
+.mt-12{margin-top:12px}
+.mt-16{margin-top:16px}
+.small{font-size:11px}
+.label-sm{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px;display:block}
+hr.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+.hidden{display:none !important}
+.wrap-pre{white-space:pre-wrap;word-break:break-word}
 </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg">
-  <div class="container-fluid px-4">
-    <span class="navbar-brand">model-builder <small class="text-muted fw-normal" style="font-size:0.7em">v{{ mb_version }}</small></span>
-    <div class="navbar-nav">
-      <a class="nav-link {% if page == 'pipeline' %}active{% endif %}" href="/">Pipeline</a>
-      <a class="nav-link {% if page == 'data' %}active{% endif %}" href="/data">Data</a>
-      <a class="nav-link {% if page == 'results' %}active{% endif %}" href="/results">Results</a>
-      <a class="nav-link {% if page == 'deploy' %}active{% endif %}" href="/deploy">Deploy</a>
-    </div>
-    <span id="sse-status" class="text-muted ms-auto me-3">connecting...</span>
+<div class="topbar">
+  <div class="brand">
+    model-builder
+    <span class="brand-version">v{{ mb_version }}</span>
   </div>
-</nav>
-<div class="container-fluid px-4 py-3">
+  <div class="topbar-right">
+    <span id="sse-indicator" class="live-indicator">
+      <span class="live-dot"></span>
+      <span id="sse-label">connecting</span>
+    </span>
+    <span class="project-name">{{ project_name }}</span>
+    <button class="theme-btn" id="theme-toggle" onclick="toggleTheme()">&#9728; Light</button>
+  </div>
+</div>
+
+<div class="stepper">
+  {% for num, label, url in [(1,'Upload','/upload'),(2,'Configure','/configure'),(3,'Run','/'),(4,'Results','/results'),(5,'Deploy','/deploy'),(6,'Query','/query')] %}
+  {% if not loop.first %}<div class="step-connector"></div>{% endif %}
+  <div class="step-wrap">
+    {% if num == current_step %}
+      <span class="step step-active">
+        <span class="step-num">{{ num }}</span>
+        <span class="step-label">{{ label }}</span>
+      </span>
+    {% elif num <= max_step %}
+      <a class="step step-done" href="{{ url }}">
+        <span class="step-num">&#10003;</span>
+        <span class="step-label">{{ label }}</span>
+      </a>
+    {% else %}
+      <span class="step step-pending">
+        <span class="step-num">{{ num }}</span>
+        <span class="step-label">{{ label }}</span>
+      </span>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+<div class="page-wrap">
 {% block content %}{% endblock %}
 </div>
+
 <script>
-// SSE live updates
-const es = new EventSource('/events');
-es.onopen = () => document.getElementById('sse-status').textContent = 'live';
-es.onerror = () => document.getElementById('sse-status').textContent = 'disconnected';
-es.onmessage = (e) => {
-  const ev = JSON.parse(e.data);
+var _sseInd = document.getElementById('sse-indicator');
+var _sseLbl = document.getElementById('sse-label');
+var es = new EventSource('/events');
+es.onopen = function() { _sseInd.className = 'live-indicator connected'; _sseLbl.textContent = 'live'; };
+es.onerror = function() { _sseInd.className = 'live-indicator'; _sseLbl.textContent = 'disconnected'; };
+es.onmessage = function(e) {
+  var ev = JSON.parse(e.data);
   if (ev.type === 'state_change' || ev.type === 'awaiting_human') {
-    htmx.ajax('GET', '/pipeline-nodes', {target: '#pipeline-nodes', swap: 'innerHTML'});
+    var t = document.getElementById('pipeline-nodes');
+    if (t) htmx.ajax('GET', '/pipeline-nodes', {target: '#pipeline-nodes', swap: 'innerHTML'});
   }
 };
 </script>
+{% block scripts %}{% endblock %}
 </body>
 </html>

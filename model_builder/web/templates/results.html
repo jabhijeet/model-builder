@@ -1,143 +1,124 @@
 {% extends "base.html" %}
 {% block content %}
 
-{# ── Page header ── #}
-<div class="row mb-3">
-  <div class="col-12">
-    <h5 class="mb-0">Results</h5>
-    <small class="text-muted">Review model evaluation metrics and decide which model to export</small>
-  </div>
+<div class="page-head">
+  <h1>Results</h1>
+  <p>Evaluation metrics and feature importance for your trained models</p>
 </div>
 
 {% if not runs %}
-{# ── No results yet ── #}
-<div class="alert" style="background:#161f2e;border:1px solid #1f6feb;color:#e6edf3;" role="alert">
-  <strong>No results yet.</strong> Complete a training run first.
-  <ol class="mb-0 mt-1">
-    <li>Go to the <a href="/" class="text-info">Pipeline</a> tab and check your pipeline status.</li>
-    <li>If training nodes haven't run, make sure you've approved the <strong>review_data</strong> gate and run <code>aimodelground run</code>.</li>
-    <li>Once the <code>eval_join</code> node completes, results appear here automatically.</li>
+<div class="alert alert-info">
+  <strong>No results yet.</strong>
+  <ol>
+    <li>Go to <a href="/">Run</a> and check pipeline status.</li>
+    <li>Approve the <strong>review_data</strong> gate and click Run Pipeline.</li>
+    <li>Once training completes, results appear here.</li>
   </ol>
 </div>
 
 {% else %}
 
 {# ── Run selector ── #}
-<div class="row mb-3">
-  <div class="col-12">
-    <div class="d-flex align-items-center gap-3 flex-wrap">
-      <span class="text-muted" style="font-size:13px;">Select run:</span>
-      {% for r in runs %}
-      <a href="/results?run={{ r.name }}" class="btn btn-sm {% if r.name == selected_run %}btn-primary{% else %}btn-outline-secondary{% endif %}">
-        {{ r.name }}
-      </a>
-      {% endfor %}
-      {% if runs | length > 1 %}
-      <span class="text-muted" style="font-size:12px;">| Compare:
-        {% for r in runs %}
-        {% if r.name != selected_run %}
-        <a href="/results?run={{ selected_run }}&compare={{ r.name }}" class="text-info ms-1">vs {{ r.name }}</a>
-        {% endif %}
-        {% endfor %}
-      </span>
-      {% endif %}
-    </div>
-  </div>
-</div>
-
-{# ── Instructions banner ── #}
-<div class="alert" style="background:#1a1a2e;border:1px solid #30363d;color:#e6edf3;font-size:13px;" role="alert">
-  <strong>How to read this page</strong> &mdash;
-  The leaderboard shows evaluation metrics for each trained algorithm.
-  <ul class="mb-0 mt-1">
-    <li><strong>accuracy / F1</strong>: higher is better (classification tasks).</li>
-    <li><strong>RMSE / MAE</strong>: lower is better (regression tasks).</li>
-    <li><strong>Feature Importance</strong>: which input columns influenced the prediction most (SHAP values).</li>
-    <li>Click a different run button above to compare runs. Green delta = improvement.</li>
-    <li>Happy with the results? Go to <a href="/" class="text-info">Pipeline</a>, approve the <strong>review_results</strong> gate, then run <code>aimodelground run</code> to export.</li>
-    <li>Not happy? Try <code>aimodelground tune --trials 50</code> to auto-tune hyperparameters, or add more data.</li>
-  </ul>
+<div class="d-flex align-center gap-8 mb-16" style="flex-wrap:wrap;">
+  <span class="small text-muted">Run:</span>
+  {% for r in runs %}
+  <a href="/results?run={{ r.name }}"
+     class="btn btn-sm {% if r.name == selected_run %}btn-primary{% else %}btn-ghost{% endif %}">
+    {{ r.name }}
+  </a>
+  {% endfor %}
+  {% if runs | length > 1 %}
+  <span class="small text-muted">
+    Compare:
+    {% for r in runs %}{% if r.name != selected_run %}
+    <a href="/results?run={{ selected_run }}&compare={{ r.name }}" class="text-accent">vs {{ r.name }}</a>
+    {% endif %}{% endfor %}
+  </span>
+  {% endif %}
 </div>
 
 {% if eval_report %}
-<div class="row">
-  <div class="col-lg-5">
 
-    {# ── Leaderboard ── #}
-    <div class="card mb-3">
-      <div class="card-header d-flex justify-content-between">
-        <span>Evaluation Metrics &mdash; {{ selected_run }}</span>
-        {% if eval_report.plugin_name %}<small class="text-muted">{{ eval_report.plugin_name }}</small>{% endif %}
-      </div>
-      <div class="card-body p-0">
-        <table class="table table-sm table-dark table-hover mb-0">
-          <thead><tr><th>Metric</th><th>Value</th><th></th></tr></thead>
-          <tbody>
-          {% for k, v in eval_report.metrics.items() %}
-          <tr>
-            <td>{{ k }}</td>
-            <td><strong>{{ "%.4f" | format(v) }}</strong></td>
-            <td>
-              {% if k in ("accuracy", "f1", "auc") %}
-              <small class="text-muted">higher = better</small>
-              {% elif k in ("rmse", "mae") %}
-              <small class="text-muted">lower = better</small>
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-          </tbody>
-        </table>
-      </div>
+{# ── Metric cards ── #}
+<div class="grid-3 mb-16">
+  {% for k, v in eval_report.metrics.items() %}
+  <div class="metric-card">
+    <div class="metric-val {% if k in ('rmse','mae') %}text-accent{% endif %}">
+      {{ "%.4f" | format(v) }}
     </div>
+    <div class="metric-label">{{ k }}</div>
+    {% if compare_report and k in compare_report.metrics %}
+    {% set delta = compare_report.metrics[k] - v %}
+    <div class="metric-delta {% if delta > 0 %}pos{% elif delta < 0 %}neg{% endif %}">
+      {{ "%+.4f" | format(delta) }} vs {{ compare_run }}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+<div class="grid-2">
+  <div>
 
     {# ── Feature importance ── #}
     {% if eval_report.feature_importance %}
     <div class="card">
-      <div class="card-header">Feature Importance <small class="text-muted">(SHAP)</small></div>
-      <div class="card-body p-0">
-        <table class="table table-sm table-dark mb-0">
-          {% for feat, score in eval_report.feature_importance.items() %}
-          <tr>
-            <td style="width:35%">{{ feat }}</td>
-            <td>
-              <div class="progress" style="height:14px;background:#21262d;">
-                <div class="progress-bar bg-info" style="width:{{ (score * 100)|int }}%"></div>
-              </div>
-            </td>
-            <td class="text-end" style="width:15%"><small>{{ "%.3f" | format(score) }}</small></td>
-          </tr>
-          {% endfor %}
-        </table>
-        <div class="p-2">
-          <small class="text-muted">Higher bar = stronger influence on predictions. Low-importance columns can be removed to simplify the model.</small>
+      <div class="card-head">Feature Importance <span class="small">(SHAP)</span></div>
+      <div class="card-body">
+        {% set max_fi = eval_report.feature_importance.values() | max %}
+        {% for feat, score in eval_report.feature_importance.items() %}
+        <div class="feat-row">
+          <span class="feat-name">{{ feat }}</span>
+          <div class="feat-bar-wrap">
+            <div class="feat-bar" style="width:{{ ((score / max_fi) * 100) | int }}%"></div>
+          </div>
+          <span class="feat-score">{{ "%.3f" | format(score) }}</span>
         </div>
+        {% endfor %}
+        <p class="small text-muted mt-8">Higher = stronger influence. Low-importance columns can be dropped.</p>
       </div>
     </div>
     {% endif %}
 
-  </div>
-  <div class="col-lg-7">
+    {# ── Next steps ── #}
+    <div class="card">
+      <div class="card-head">What to do next</div>
+      <div class="card-body" style="font-size:13px;">
+        <p class="mb-8"><strong>Happy?</strong> Go to <a href="/">Run</a>, approve <code>review_results</code>, then click Run Pipeline to export.</p>
+        <p class="mb-8"><strong>Want to improve?</strong> Run <code>aimodelground tune --trials 50</code> then re-run.</p>
+        <p class="mb-0"><strong>Compare runs:</strong> click another run button above, then append <code>?compare=run_001</code>.</p>
+      </div>
+    </div>
 
-    {# ── Run comparison ── #}
+  </div>
+  <div>
+
+    {# ── Compare table ── #}
     {% if compare_report %}
-    <div class="card mb-3">
-      <div class="card-header">Comparing {{ selected_run }} vs {{ compare_run }}</div>
-      <div class="card-body p-0">
-        <table class="table table-sm table-dark mb-0">
-          <thead><tr><th>Metric</th><th>{{ selected_run }}</th><th>{{ compare_run }}</th><th>Delta</th></tr></thead>
+    <div class="card mb-16">
+      <div class="card-head">{{ selected_run }} vs {{ compare_run }}</div>
+      <div class="card-body" style="padding:0;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);">
+              <th style="padding:8px 12px;text-align:left;color:var(--muted);font-size:11px;">Metric</th>
+              <th style="padding:8px 12px;text-align:right;color:var(--muted);font-size:11px;">{{ selected_run }}</th>
+              <th style="padding:8px 12px;text-align:right;color:var(--muted);font-size:11px;">{{ compare_run }}</th>
+              <th style="padding:8px 12px;text-align:right;color:var(--muted);font-size:11px;">Delta</th>
+            </tr>
+          </thead>
           <tbody>
           {% for k in all_metrics %}
           {% set va = eval_report.metrics.get(k) %}
           {% set vb = compare_report.metrics.get(k) %}
-          <tr>
-            <td>{{ k }}</td>
-            <td>{% if va is not none %}{{ "%.4f" | format(va) }}{% else %}&mdash;{% endif %}</td>
-            <td>{% if vb is not none %}{{ "%.4f" | format(vb) }}{% else %}&mdash;{% endif %}</td>
-            <td>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:8px 12px;">{{ k }}</td>
+            <td style="padding:8px 12px;text-align:right;">{% if va is not none %}{{ "%.4f" | format(va) }}{% else %}&mdash;{% endif %}</td>
+            <td style="padding:8px 12px;text-align:right;">{% if vb is not none %}{{ "%.4f" | format(vb) }}{% else %}&mdash;{% endif %}</td>
+            <td style="padding:8px 12px;text-align:right;">
               {% if va is not none and vb is not none %}
               {% set delta = vb - va %}
-              <span class="{% if delta > 0 %}metric-delta-pos{% elif delta < 0 %}metric-delta-neg{% endif %}">
+              <span class="{% if delta > 0 %}text-success{% elif delta < 0 %}text-danger{% endif %}">
                 {{ "%+.4f" | format(delta) }}
               </span>
               {% else %}&mdash;{% endif %}
@@ -150,45 +131,30 @@
     </div>
     {% endif %}
 
-    {# ── Bar chart ── #}
-    <div id="metrics-chart"></div>
+    {# ── Plotly chart ── #}
+    <div id="metrics-chart" class="card" style="padding:4px;"></div>
     {% if eval_report.metrics %}
     <script>
     Plotly.newPlot('metrics-chart', [{
       type: 'bar',
-      x: {{ eval_report.metrics.keys()|list|tojson }},
-      y: {{ eval_report.metrics.values()|list|tojson }},
-      marker: { color: '#58a6ff' }
+      x: {{ eval_report.metrics.keys() | list | tojson }},
+      y: {{ eval_report.metrics.values() | list | tojson }},
+      marker: { color: '#4f8ef7' }
     }], {
-      paper_bgcolor: '#161b22',
-      plot_bgcolor: '#0d1117',
-      font: { color: '#e6edf3' },
-      margin: { t: 30, b: 40, l: 40, r: 20 },
-      height: 240,
-      title: { text: 'Metrics — ' + {{ selected_run|tojson }}, font: { color: '#e6edf3', size: 13 } }
+      paper_bgcolor: 'transparent',
+      plot_bgcolor: 'transparent',
+      font: { color: '#e2e8f0', family: 'Inter, sans-serif', size: 12 },
+      margin: { t: 20, b: 40, l: 40, r: 10 },
+      height: 220,
     });
     </script>
     {% endif %}
-
-    {# ── Next steps ── #}
-    <div class="card mt-3">
-      <div class="card-header">What to do next</div>
-      <div class="card-body" style="font-size:13px;">
-        <p class="mb-1"><strong>Happy with results?</strong></p>
-        <p class="mb-1">1. Go to <a href="/" class="text-info">Pipeline</a> and click <strong>Approve</strong> on the <code>review_results</code> gate.</p>
-        <p class="mb-2">2. Run <code>aimodelground run</code> to export the model and generate your deployment guide.</p>
-        <p class="mb-1"><strong>Want to improve?</strong></p>
-        <p class="mb-1">- Tune hyperparameters: <code>aimodelground tune --trials 50</code></p>
-        <p class="mb-1">- Re-run from training with new config: <code>aimodelground run --from train_rf</code></p>
-        <p class="mb-0">- Compare another run: click a run button above and add <code>?compare=run_001</code> to the URL.</p>
-      </div>
-    </div>
 
   </div>
 </div>
 
 {% else %}
-<div class="text-muted">No evaluation report found for <strong>{{ selected_run }}</strong>. The run may not have completed training yet.</div>
+<div class="text-muted">No eval report for <strong>{{ selected_run }}</strong> yet.</div>
 {% endif %}
 {% endif %}
 {% endblock %}

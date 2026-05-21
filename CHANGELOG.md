@@ -7,6 +7,69 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.3.0] — 2026-05-21
+
+### Added
+
+**Guided 6-step wizard UI** — replaces the flat 4-tab Bootstrap layout with a contextual step-by-step flow:
+
+| Step | Page | What changed |
+|------|------|-------------|
+| 1 | **Upload** | Drag-and-drop zone, file pills showing name + size + "ready" badge, auto-advance hint |
+| 2 | **Configure** | Split-pane: smart form (file selector, target column auto-detected, algorithm chips) + live YAML textarea that syncs as you change form fields. Validate + Save buttons. |
+| 3 | **Run** | **Run Pipeline button** — triggers pipeline directly from UI (no terminal needed). "From node" dropdown for partial re-runs. Gate approval cards, progress bar, live node list. |
+| 4 | **Results** | Metric summary cards (big numbers), SHAP feature importance bars, Plotly chart, run compare delta table |
+| 5 | **Deploy** | Query Model link, export info, algorithm rankings, copy buttons |
+| 6 | **Query** | Predict tab (ML model inference from feature inputs) + Explain tab (SHAP + metrics + pre-written insights, no LLM) |
+
+**Wizard stepper** — sticky top bar shows all 6 steps. Completed steps are clickable (green ✓), current step is highlighted (blue), locked steps are grey. Max unlocked step is computed from project state (files → yaml → run → deploy → model export).
+
+**Deep Space theme** — custom CSS variables, no Bootstrap dependency:
+- Dark default: `#0a0e1a` background, `#4f8ef7` accent blue, `#00d4a0` success green
+- Light mode toggle: `data-theme="light"` on `<html>`, preference stored in `localStorage`
+- Inter font (Google Fonts CDN), weights 400–800
+- All CSS via `<style>` block in `base.html` — no external CSS framework
+
+**UI-triggered pipeline runs** (`POST /api/run`):
+- Calls FastAPI → `asyncio.create_task` → runs scheduler in background
+- EventBus subscriber wires directly to SSE broadcaster — live node updates flow to browser during run
+- Supports `?from_node=<id>` for partial replay
+- No terminal required for basic use
+
+**New API endpoints**:
+- `GET /api/file-info/{filename}` — pandas column detection, dtype inference, target heuristic (looks for columns named `target`, `label`, `y`, `class`, `species` etc.)
+- `GET /api/yaml` — read current `pipeline.yaml`
+- `POST /api/yaml` — write and validate `pipeline.yaml`
+- `POST /api/yaml/validate` — dry-run YAML parse + `nodes` key check, no write
+- `POST /api/predict` — load exported model (joblib), run `.predict()` + `.predict_proba()`, return `{prediction, confidence, top_feature, top_feature_value}`
+- `GET /api/explain` — aggregate `eval_report.json` + `profile.json` into `{metrics, feature_importance, profile, insights}`
+
+**New routes**: `/upload`, `/configure`, `/query`
+
+**Pre-written insights** (Explain tab, no LLM):
+- Accuracy < 0.7 → "consider more data or hyperparameter tuning"
+- Top feature dominance > 0.8 → "model may overfit to this feature"
+- Column null rate > 10% → "clean source data"
+
+### Changed
+
+- `base.html` fully rewritten — Bootstrap 5 removed, custom CSS variables, Inter font, wizard stepper
+- `pipeline.html` renamed to `run.html` with new Run button, gate cards, progress bar
+- `data.html` removed — `/data` now redirects (302) to `/upload`
+- `pipeline_nodes.html` restyled — new badge/card CSS, Approve/Skip/Retry buttons use new classes
+- `results.html` restyled — metric cards, SHAP horizontal bars, Plotly transparent background
+- `deploy.html` restyled — Quick Actions sidebar, Query Model link, copy buttons
+- All page routes now receive `current_step` and `max_step` for wizard stepper rendering
+- `_step_context()` helper computes `max_step` from live project state on every request
+
+### Fixed
+
+- `predict.js` — XSS: all server-sourced values (column names, metric keys, insight strings) are HTML-escaped via `escHtml()` before `innerHTML` insertion
+- `predict.js` — network errors during prediction no longer permanently disable the Predict button (try/catch/finally)
+- `yaml-editor.js` — `saveYaml()` and `validateYaml()` now null-check DOM elements before access
+
+---
+
 ## [0.2.0] — 2026-05-21
 
 ### Added

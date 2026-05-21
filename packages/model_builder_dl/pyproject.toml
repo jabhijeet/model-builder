@@ -1,6 +1,6 @@
 [project]
 name = "aimodelground-dl"
-version = "0.2.0"
+version = "0.3.0"
 description = "Deep learning plugins for model-builder: CNN (images), LSTM (sequences) via PyTorch"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
